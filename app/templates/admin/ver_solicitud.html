@@ -1,0 +1,467 @@
+{% extends "admin/dashboard.html" %}
+
+{% block title %}Solicitud #{{ solicitud.id }} - Panel Administrativo{% endblock %}
+
+{% block content %}
+<div class="admin-theme">
+    <!-- Header -->
+    <div class="admin-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1 class="mb-0">
+                        <i class="fas fa-file-alt me-2"></i>
+                        Solicitud #{{ solicitud.id }}
+                    </h1>
+                    <p class="mb-0 mt-2 opacity-75">
+                        Detalles de la solicitud de pase vehicular
+                    </p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <a href="{{ url_for('admin.solicitudes') }}" class="btn btn-light">
+                        <i class="fas fa-arrow-left me-2"></i>Volver a Solicitudes
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <!-- Información principal -->
+            <div class="col-md-8">
+                <div class="admin-card">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>Información de la Solicitud
+                        </h3>
+                        <span class="badge 
+                            {% if solicitud.estado == 'pendiente' %}bg-warning text-dark
+                            {% elif solicitud.estado == 'aprobado' %}bg-success
+                            {% elif solicitud.estado == 'rechazado' %}bg-danger
+                            {% else %}bg-secondary{% endif %} fs-6">
+                            {{ solicitud.estado|title }}
+                        </span>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Tipo de Pase</label>
+                                <div class="form-control-plaintext">
+                                    <span class="badge {% if solicitud.tipo_pase == 'ciclo' %}bg-primary{% else %}bg-info{% endif %}">
+                                        {{ solicitud.tipo_pase|title }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Fecha de Solicitud</label>
+                                <div class="form-control-plaintext">
+                                    {{ solicitud.fecha_solicitud.strftime('%d/%m/%Y %H:%M') }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if solicitud.ciclo %}
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Ciclo Académico</label>
+                                <div class="form-control-plaintext">
+                                    {{ solicitud.ciclo.nombre }}
+                                    <small class="text-muted">
+                                        ({{ solicitud.ciclo.fecha_inicio.strftime('%d/%m/%Y') }} - 
+                                         {{ solicitud.ciclo.fecha_fin.strftime('%d/%m/%Y') }})
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if solicitud.estado != 'pendiente' and solicitud.comentarios_admin %}
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Comentarios del Administrador</label>
+                        <div class="form-control-plaintext">
+                            {{ solicitud.comentarios_admin }}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if solicitud.fecha_revision %}
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Fecha de Revisión</label>
+                        <div class="form-control-plaintext">
+                            {{ solicitud.fecha_revision.strftime('%d/%m/%Y %H:%M') }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Información del solicitante -->
+                <div class="admin-card">
+                    <h4 class="mb-3">
+                        <i class="fas fa-user me-2"></i>Información del Solicitante
+                    </h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Nombre</label>
+                                <div class="form-control-plaintext">
+                                    {{ solicitud.usuario.nombre }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Rol</label>
+                                <div class="form-control-plaintext">
+                                    <span class="badge {% if solicitud.usuario.rol == 'estudiante' %}bg-primary{% else %}bg-success{% endif %}">
+                                        {{ solicitud.usuario.rol|title }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">DNI</label>
+                                <div class="form-control-plaintext">
+                                    {{ solicitud.usuario.dni }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Email</label>
+                                <div class="form-control-plaintext">
+                                    {{ solicitud.usuario.email or 'No registrado' }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% if solicitud.usuario.codigo_universitario %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Código Universitario</label>
+                                <div class="form-control-plaintext">
+                                    {{ solicitud.usuario.codigo_universitario }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Teléfono</label>
+                                <div class="form-control-plaintext">
+                                    {{ solicitud.usuario.telefono or 'No registrado' }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Información del vehículo -->
+                <div class="admin-card">
+                    <h4 class="mb-3">
+                        <i class="fas fa-car me-2"></i>Información del Vehículo
+                    </h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Placa</label>
+                                <div class="form-control-plaintext">
+                                    <span class="badge bg-dark fs-6">{{ solicitud.vehiculo.placa }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Tipo</label>
+                                <div class="form-control-plaintext">
+                                    {{ solicitud.vehiculo.tipo }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Marca</label>
+                                <div class="form-control-plaintext">
+                                    {{ solicitud.vehiculo.marca }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Modelo</label>
+                                <div class="form-control-plaintext">
+                                    {{ solicitud.vehiculo.modelo }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Color</label>
+                                <div class="form-control-plaintext">
+                                    {{ solicitud.vehiculo.color }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Año</label>
+                                <div class="form-control-plaintext">
+                                    {{ solicitud.vehiculo.year or 'No especificado' }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel de acciones -->
+            <div class="col-md-4">
+                <div class="admin-card">
+                    <h4 class="mb-3">
+                        <i class="fas fa-cogs me-2"></i>Acciones
+                    </h4>
+                    
+                    {% if solicitud.estado == 'pendiente' %}
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-success" onclick="aprobarSolicitud({{ solicitud.id }})">
+                            <i class="fas fa-check me-2"></i>Aprobar Solicitud
+                        </button>
+                        <button class="btn btn-danger" onclick="rechazarSolicitud({{ solicitud.id }})">
+                            <i class="fas fa-times me-2"></i>Rechazar Solicitud
+                        </button>
+                    </div>
+                    {% elif solicitud.estado == 'aprobado' %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Solicitud aprobada
+                        {% if solicitud.pase_vehicular %}
+                        <hr>
+                        <a href="{{ url_for('admin.ver_pase', id=solicitud.pase_vehicular.id) }}" class="btn btn-sm btn-success">
+                            Ver Pase Generado
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% elif solicitud.estado == 'rechazado' %}
+                    <div class="alert alert-danger">
+                        <i class="fas fa-times-circle me-2"></i>
+                        Solicitud rechazada
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Historial de estados -->
+                <div class="admin-card">
+                    <h4 class="mb-3">
+                        <i class="fas fa-history me-2"></i>Historial
+                    </h4>
+                    <div class="timeline">
+                        <div class="timeline-item active">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Solicitud creada</h6>
+                                <small class="text-muted">{{ solicitud.fecha_solicitud.strftime('%d/%m/%Y %H:%M') }}</small>
+                            </div>
+                        </div>
+                        
+                        {% if solicitud.estado != 'pendiente' and solicitud.fecha_revision %}
+                        <div class="timeline-item active">
+                            <div class="timeline-marker 
+                                {% if solicitud.estado == 'aprobado' %}bg-success
+                                {% elif solicitud.estado == 'rechazado' %}bg-danger
+                                {% else %}bg-secondary{% endif %}"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Solicitud {{ solicitud.estado }}</h6>
+                                <small class="text-muted">{{ solicitud.fecha_revision.strftime('%d/%m/%Y %H:%M') }}</small>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if solicitud.pase_vehicular %}
+                        <div class="timeline-item active">
+                            <div class="timeline-marker bg-info"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Pase generado</h6>
+                                <small class="text-muted">{{ solicitud.pase_vehicular.fecha_emision.strftime('%d/%m/%Y %H:%M') }}</small>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Información adicional -->
+                <div class="admin-card">
+                    <h4 class="mb-3">
+                        <i class="fas fa-info-circle me-2"></i>Información Adicional
+                    </h4>
+                    <div class="small">
+                        <div class="mb-2">
+                            <strong>Tipo de solicitud:</strong> 
+                            {{ solicitud.tipo_pase|title }}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Tipo de usuario:</strong> 
+                            {{ solicitud.usuario.rol|title }}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Tipo de vehículo:</strong> 
+                            {{ solicitud.vehiculo.tipo }}
+                        </div>
+                        {% if solicitud.ciclo %}
+                        <div class="mb-2">
+                            <strong>Ciclo académico:</strong> 
+                            {{ solicitud.ciclo.nombre }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para aprobar solicitud -->
+<div class="modal fade" id="aprobarModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-check me-2"></i>Aprobar Solicitud #{{ solicitud.id }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="aprobarForm" method="POST">
+                <div class="modal-body">
+                    <div class="alert alert-success">
+                        <i class="fas fa-info-circle me-2"></i>
+                        ¿Está seguro de que desea aprobar esta solicitud? Se generará automáticamente un pase vehicular.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Observaciones (opcional)</label>
+                        <textarea name="comentarios_admin" class="form-control" rows="3" 
+                                  placeholder="Comentarios adicionales sobre la aprobación..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check me-2"></i>Aprobar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para rechazar solicitud -->
+<div class="modal fade" id="rechazarModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-times me-2"></i>Rechazar Solicitud #{{ solicitud.id }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="rechazarForm" method="POST">
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        ¿Está seguro de que desea rechazar esta solicitud?
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Motivo del rechazo <span class="text-danger">*</span></label>
+                        <textarea name="comentarios_admin" class="form-control" rows="3" required
+                                  placeholder="Explique el motivo del rechazo..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-times me-2"></i>Rechazar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+{{ super() }}
+<style>
+    .timeline {
+        position: relative;
+        padding-left: 3rem;
+    }
+    
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 1rem;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #e9ecef;
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 2rem;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        left: -2rem;
+        width: 1rem;
+        height: 1rem;
+        border-radius: 50%;
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 2px #e9ecef;
+    }
+    
+    .timeline-item.active .timeline-marker {
+        box-shadow: 0 0 0 2px var(--primary-color);
+    }
+    
+    .timeline-content {
+        padding: 0.5rem 0;
+    }
+    
+    .timeline-content h6 {
+        margin-bottom: 0.25rem;
+        color: #495057;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function aprobarSolicitud(solicitudId) {
+    const form = document.getElementById('aprobarForm');
+    form.action = `/admin/solicitud/${solicitudId}/aprobar`;
+    const modal = new bootstrap.Modal(document.getElementById('aprobarModal'));
+    modal.show();
+}
+
+function rechazarSolicitud(solicitudId) {
+    const form = document.getElementById('rechazarForm');
+    form.action = `/admin/solicitud/${solicitudId}/rechazar`;
+    const modal = new bootstrap.Modal(document.getElementById('rechazarModal'));
+    modal.show();
+}
+</script>
+{% endblock %}

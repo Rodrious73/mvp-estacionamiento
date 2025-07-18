@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - Sistema QR Universitario</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .register-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+        
+        .register-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .register-header {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .form-floating .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            padding: 12px;
+            font-weight: 600;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+        
+        .role-selector {
+            display: none;
+        }
+        
+        .role-selector.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .role-card {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .role-card:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+        
+        .role-card.selected {
+            border-color: #667eea;
+            background-color: #f8f9ff;
+        }
+        
+        .role-icon {
+            font-size: 2rem;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+        
+        .alert {
+            border-radius: 10px;
+        }
+        
+        .password-error {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8 col-xl-6">
+                    <div class="register-card">
+                        <!-- Header -->
+                        <div class="register-header">
+                            <h2 class="mb-0">
+                                <i class="fas fa-user-plus me-3"></i>
+                                Registro de Usuario
+                            </h2>
+                            <p class="mb-0 mt-2 opacity-75">
+                                Sistema de Gestión de Estacionamiento Universitario
+                            </p>
+                        </div>
+                        
+                        <!-- Formulario -->
+                        <div class="p-4">
+                            {% with messages = get_flashed_messages(with_categories=true) %}
+                                {% if messages %}
+                                    {% for category, message in messages %}
+                                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                                            <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' }} me-2"></i>
+                                            {{ message }}
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endwith %}
+                            
+                            <form method="POST" id="registerForm">
+                                <!-- Paso 1: Selección de Rol -->
+                                <div id="step1" class="step">
+                                    <h5 class="mb-4 text-center">
+                                        <i class="fas fa-users me-2"></i>
+                                        Selecciona tu rol en la universidad
+                                    </h5>
+                                    
+                                    <div class="row g-3 mb-4">
+                                        <div class="col-md-4">
+                                            <div class="role-card" data-role="estudiante">
+                                                <div class="role-icon">
+                                                    <i class="fas fa-graduation-cap"></i>
+                                                </div>
+                                                <h6>Estudiante</h6>
+                                                <small class="text-muted">Pases por ciclo académico</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="role-card" data-role="docente">
+                                                <div class="role-icon">
+                                                    <i class="fas fa-chalkboard-teacher"></i>
+                                                </div>
+                                                <h6>Docente</h6>
+                                                <small class="text-muted">Pases por ciclo académico</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="role-card" data-role="visita">
+                                                <div class="role-icon">
+                                                    <i class="fas fa-user-friends"></i>
+                                                </div>
+                                                <h6>Visitante</h6>
+                                                <small class="text-muted">Pases temporales</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <input type="hidden" name="rol" id="rolSelected" required>
+                                    
+                                    <div class="d-grid">
+                                        <button type="button" class="btn btn-primary btn-lg" id="nextStep" disabled>
+                                            <i class="fas fa-arrow-right me-2"></i>
+                                            Continuar
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Paso 2: Datos Personales -->
+                                <div id="step2" class="step role-selector">
+                                    <div class="d-flex align-items-center mb-4">
+                                        <button type="button" class="btn btn-outline-secondary me-3" id="backStep">
+                                            <i class="fas fa-arrow-left"></i>
+                                        </button>
+                                        <h5 class="mb-0">
+                                            <i class="fas fa-user me-2"></i>
+                                            Datos Personales
+                                        </h5>
+                                    </div>
+                                    
+                                    <div class="row g-3">
+                                        <!-- Nombre Completo -->
+                                        <div class="col-12">
+                                            <div class="form-floating">
+                                                <input type="text" class="form-control" id="nombre" name="nombre" placeholder="Nombre completo" required>
+                                                <label for="nombre">
+                                                    <i class="fas fa-user me-2"></i>
+                                                    Nombre Completo
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- DNI -->
+                                        <div class="col-md-6">
+                                            <div class="form-floating">
+                                                <input type="text" class="form-control" id="dni" name="dni" placeholder="DNI" maxlength="8" required>
+                                                <label for="dni">
+                                                    <i class="fas fa-id-card me-2"></i>
+                                                    DNI
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Teléfono -->
+                                        <div class="col-md-6">
+                                            <div class="form-floating">
+                                                <input type="tel" class="form-control" id="telefono" name="telefono" placeholder="Teléfono" maxlength="9">
+                                                <label for="telefono">
+                                                    <i class="fas fa-phone me-2"></i>
+                                                    Teléfono (opcional)
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Email -->
+                                        <div class="col-12">
+                                            <div class="form-floating">
+                                                <input type="email" class="form-control" id="email" name="email" placeholder="Email" required>
+                                                <label for="email">
+                                                    <i class="fas fa-envelope me-2"></i>
+                                                    Email
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Código Universitario (condicional) -->
+                                        <div class="col-12" id="codigoGroup" style="display: none;">
+                                            <div class="form-floating">
+                                                <input type="text" class="form-control" id="codigo_universitario" name="codigo_universitario" placeholder="Código Universitario">
+                                                <label for="codigo_universitario">
+                                                    <i class="fas fa-graduation-cap me-2"></i>
+                                                    Código Universitario
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Contraseña -->
+                                        <div class="col-md-6">
+                                            <div class="form-floating">
+                                                <input type="password" class="form-control" id="contraseña" name="contraseña" placeholder="Contraseña" required>
+                                                <label for="contraseña">
+                                                    <i class="fas fa-lock me-2"></i>
+                                                    Contraseña
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Confirmar Contraseña -->
+                                        <div class="col-md-6">
+                                            <div class="form-floating">
+                                                <input type="password" class="form-control" id="confirmar_contraseña" name="confirmar_contraseña" placeholder="Confirmar Contraseña" required>
+                                                <label for="confirmar_contraseña">
+                                                    <i class="fas fa-lock me-2"></i>
+                                                    Confirmar Contraseña
+                                                </label>
+                                            </div>
+                                            <div class="password-error" id="passwordError">
+                                                Las contraseñas no coinciden
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Términos y Condiciones -->
+                                    <div class="form-check mt-4">
+                                        <input class="form-check-input" type="checkbox" id="terminos" name="terminos" required>
+                                        <label class="form-check-label" for="terminos">
+                                            Acepto los términos y condiciones del sistema
+                                        </label>
+                                    </div>
+                                    
+                                    <!-- Botones -->
+                                    <div class="d-grid gap-2 mt-4">
+                                        <button type="submit" class="btn btn-primary btn-lg">
+                                            <i class="fas fa-user-plus me-2"></i>
+                                            Registrarse
+                                        </button>
+                                        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary">
+                                            <i class="fas fa-sign-in-alt me-2"></i>
+                                            Ya tengo cuenta
+                                        </a>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <!-- Link de regreso -->
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('index.index') }}" class="text-white text-decoration-none">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Volver al inicio
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Variables del formulario
+        const roleCards = document.querySelectorAll('.role-card');
+        const rolSelectedInput = document.getElementById('rolSelected');
+        const nextStepBtn = document.getElementById('nextStep');
+        const backStepBtn = document.getElementById('backStep');
+        const step1 = document.getElementById('step1');
+        const step2 = document.getElementById('step2');
+        const codigoGroup = document.getElementById('codigoGroup');
+        const codigoInput = document.getElementById('codigo_universitario');
+        const passwordInput = document.getElementById('contraseña');
+        const confirmPasswordInput = document.getElementById('confirmar_contraseña');
+        const passwordError = document.getElementById('passwordError');
+        
+        // Selección de rol
+        roleCards.forEach(card => {
+            card.addEventListener('click', function() {
+                // Remover selección anterior
+                roleCards.forEach(c => c.classList.remove('selected'));
+                
+                // Seleccionar nuevo rol
+                this.classList.add('selected');
+                const role = this.dataset.role;
+                rolSelectedInput.value = role;
+                
+                // Habilitar botón siguiente
+                nextStepBtn.disabled = false;
+                
+                // Mostrar/ocultar código universitario
+                if (role === 'estudiante' || role === 'docente') {
+                    codigoGroup.style.display = 'block';
+                    codigoInput.required = true;
+                } else {
+                    codigoGroup.style.display = 'none';
+                    codigoInput.required = false;
+                    codigoInput.value = '';
+                }
+            });
+        });
+        
+        // Navegación entre pasos
+        nextStepBtn.addEventListener('click', function() {
+            step1.style.display = 'none';
+            step2.classList.add('active');
+        });
+        
+        backStepBtn.addEventListener('click', function() {
+            step2.classList.remove('active');
+            step1.style.display = 'block';
+        });
+        
+        // Validación de contraseñas
+        function validatePasswords() {
+            const password = passwordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+            
+            if (password && confirmPassword) {
+                if (password !== confirmPassword) {
+                    passwordError.style.display = 'block';
+                    confirmPasswordInput.setCustomValidity('Las contraseñas no coinciden');
+                } else {
+                    passwordError.style.display = 'none';
+                    confirmPasswordInput.setCustomValidity('');
+                }
+            }
+        }
+        
+        passwordInput.addEventListener('input', validatePasswords);
+        confirmPasswordInput.addEventListener('input', validatePasswords);
+        
+        // Validación de DNI en tiempo real
+        document.getElementById('dni').addEventListener('input', function(e) {
+            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+        });
+        
+        // Validación de teléfono en tiempo real
+        document.getElementById('telefono').addEventListener('input', function(e) {
+            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+        });
+        
+        // Validación del formulario antes del envío
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            const password = passwordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+            
+            if (password !== confirmPassword) {
+                e.preventDefault();
+                passwordError.style.display = 'block';
+                confirmPasswordInput.focus();
+            }
+        });
+    </script>
+</body>
+</html>

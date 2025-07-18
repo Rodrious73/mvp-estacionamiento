@@ -1,0 +1,339 @@
+{% extends "admin/dashboard.html" %}
+
+{% block title %}Gestión de Solicitudes - Panel Administrativo{% endblock %}
+
+{% block content %}
+<div class="admin-theme">
+    <!-- Header -->
+    <div class="admin-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1 class="mb-0">
+                        <i class="fas fa-file-alt me-2"></i>
+                        Gestión de Solicitudes
+                    </h1>
+                    <p class="mb-0 mt-2 opacity-75">
+                        Aprobación y rechazo de solicitudes de pase
+                    </p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-light">
+                        <i class="fas fa-arrow-left me-2"></i>Volver al Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Navegación -->
+        <nav class="admin-nav">
+            <ul class="nav nav-pills">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin.dashboard') }}">
+                        <i class="fas fa-home me-2"></i>Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="{{ url_for('admin.solicitudes') }}">
+                        <i class="fas fa-file-alt me-2"></i>Solicitudes
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin.usuarios') }}">
+                        <i class="fas fa-users me-2"></i>Usuarios
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin.vehiculos') }}">
+                        <i class="fas fa-car me-2"></i>Vehículos
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin.pases') }}">
+                        <i class="fas fa-id-card me-2"></i>Pases
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin.reportes') }}">
+                        <i class="fas fa-chart-bar me-2"></i>Reportes
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin.ciclos') }}">
+                        <i class="fas fa-calendar-alt me-2"></i>Ciclos
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Filtros -->
+        <div class="admin-card">
+            <h4 class="mb-3">
+                <i class="fas fa-filter me-2"></i>Filtros
+            </h4>
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Estado</label>
+                    <select name="estado" class="form-select">
+                        <option value="todas" {% if estado_actual == 'todas' %}selected{% endif %}>Todas</option>
+                        <option value="pendiente" {% if estado_actual == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                        <option value="aprobada" {% if estado_actual == 'aprobada' %}selected{% endif %}>Aprobada</option>
+                        <option value="rechazada" {% if estado_actual == 'rechazada' %}selected{% endif %}>Rechazada</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Tipo</label>
+                    <select name="tipo" class="form-select">
+                        <option value="todos" {% if tipo_actual == 'todos' %}selected{% endif %}>Todos</option>
+                        <option value="ciclo" {% if tipo_actual == 'ciclo' %}selected{% endif %}>Ciclo</option>
+                        <option value="temporal" {% if tipo_actual == 'temporal' %}selected{% endif %}>Temporal</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Desde</label>
+                    <input type="date" name="fecha_desde" class="form-control" value="{{ fecha_desde or '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Hasta</label>
+                    <input type="date" name="fecha_hasta" class="form-control" value="{{ fecha_hasta or '' }}">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-2"></i>Filtrar
+                    </button>
+                    <a href="{{ url_for('admin.solicitudes') }}" class="btn btn-secondary">
+                        <i class="fas fa-times me-2"></i>Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Lista de solicitudes -->
+        <div class="admin-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">
+                    <i class="fas fa-list me-2"></i>Solicitudes
+                </h4>
+                <span class="badge badge-admin">{{ solicitudes.total }} total</span>
+            </div>
+
+            {% if solicitudes.items %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Usuario</th>
+                            <th>Vehículo</th>
+                            <th>Tipo</th>
+                            <th>Estado</th>
+                            <th>Fecha Solicitud</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for solicitud in solicitudes.items %}
+                        <tr>
+                            <td>
+                                <strong>#{{ solicitud.id }}</strong>
+                            </td>
+                            <td>
+                                <div>
+                                    <strong>{{ solicitud.usuario.nombre }}</strong>
+                                    <small class="d-block text-muted">{{ solicitud.usuario.rol|title }}</small>
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    <strong>{{ solicitud.vehiculo.placa }}</strong>
+                                    <small class="d-block text-muted">{{ solicitud.vehiculo.marca }} {{ solicitud.vehiculo.modelo }}</small>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge {% if solicitud.tipo == 'ciclo' %}bg-primary{% else %}bg-info{% endif %}">
+                                    {{ solicitud.tipo_pase|title }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge 
+                                    {% if solicitud.estado == 'pendiente' %}bg-warning text-dark
+                                    {% elif solicitud.estado == 'aprobada' %}bg-success
+                                    {% elif solicitud.estado == 'rechazada' %}bg-danger
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ solicitud.estado|title }}
+                                </span>
+                            </td>
+                            <td>
+                                <small>{{ solicitud.fecha_solicitud.strftime('%d/%m/%Y %H:%M') }}</small>
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('admin.ver_solicitud', id=solicitud.id) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if solicitud.estado == 'pendiente' %}
+                                    <button class="btn btn-sm btn-outline-success" 
+                                            onclick="aprobarSolicitud({{ solicitud.id }})">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" 
+                                            onclick="rechazarSolicitud({{ solicitud.id }})">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            {% if solicitudes.pages > 1 %}
+            <nav aria-label="Paginación de solicitudes">
+                <ul class="pagination justify-content-center">
+                    {% if solicitudes.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.solicitudes', page=solicitudes.prev_num, estado=estado_actual, tipo=tipo_actual, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta) }}">
+                            Anterior
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in solicitudes.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != solicitudes.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('admin.solicitudes', page=page_num, estado=estado_actual, tipo=tipo_actual, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">…</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if solicitudes.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.solicitudes', page=solicitudes.next_num, estado=estado_actual, tipo=tipo_actual, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta) }}">
+                            Siguiente
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-file-alt text-muted" style="font-size: 3rem;"></i>
+                <h4 class="mt-3">No hay solicitudes</h4>
+                <p class="text-muted">No se encontraron solicitudes con los filtros aplicados.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal para aprobar solicitud -->
+<div class="modal fade" id="aprobarModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-check me-2"></i>Aprobar Solicitud
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="aprobarForm" method="POST">
+                <div class="modal-body">
+                    <div class="alert alert-success">
+                        <i class="fas fa-info-circle me-2"></i>
+                        ¿Está seguro de que desea aprobar esta solicitud? Se generará automáticamente un pase vehicular.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Observaciones (opcional)</label>
+                        <textarea name="observaciones" class="form-control" rows="3" 
+                                  placeholder="Comentarios adicionales sobre la aprobación..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check me-2"></i>Aprobar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para rechazar solicitud -->
+<div class="modal fade" id="rechazarModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-times me-2"></i>Rechazar Solicitud
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="rechazarForm" method="POST">
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        ¿Está seguro de que desea rechazar esta solicitud?
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Motivo del rechazo <span class="text-danger">*</span></label>
+                        <textarea name="motivo" class="form-control" rows="3" required
+                                  placeholder="Explique el motivo del rechazo..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-times me-2"></i>Rechazar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function aprobarSolicitud(solicitudId) {
+    const form = document.getElementById('aprobarForm');
+    form.action = `/admin/solicitud/${solicitudId}/aprobar`;
+    const modal = new bootstrap.Modal(document.getElementById('aprobarModal'));
+    modal.show();
+}
+
+function rechazarSolicitud(solicitudId) {
+    const form = document.getElementById('rechazarForm');
+    form.action = `/admin/solicitud/${solicitudId}/rechazar`;
+    const modal = new bootstrap.Modal(document.getElementById('rechazarModal'));
+    modal.show();
+}
+
+// Actualizar automáticamente cada 30 segundos
+setInterval(function() {
+    if (window.location.href.includes('admin/solicitudes')) {
+        location.reload();
+    }
+}, 30000);
+</script>
+{% endblock %}

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Emergencias - Sistema de Estacionamientos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .security-header {
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+        
+        .emergency-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .alert-item {
+            background: white;
+            border-left: 4px solid #dc3545;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .emergency-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .emergency-btn:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+        
+        .capacity-gauge {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body style="background-color: #f5f6fa;">
+    <!-- Header -->
+    <div class="security-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1><i class="fas fa-exclamation-triangle me-3"></i>Gestión de Emergencias</h1>
+                    <p class="mb-0">Panel de control de emergencias y alertas de seguridad</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <a href="{{ url_for('seguridad.dashboard') }}" class="btn btn-light">
+                        <i class="fas fa-arrow-left me-2"></i>Volver al Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Mensajes Flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Alertas Activas -->
+        <div class="emergency-card">
+            <h3><i class="fas fa-bell text-danger me-2"></i>Alertas Activas</h3>
+            {% if alertas_activas %}
+                {% for alerta in alertas_activas %}
+                    <div class="alert-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h5><i class="fas fa-{{ alerta.icono }} text-{{ alerta.tipo }} me-2"></i>{{ alerta.titulo }}</h5>
+                                <p class="mb-0">{{ alerta.mensaje }}</p>
+                            </div>
+                            <small class="text-muted">{{ alerta.hora }}</small>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-check-circle text-success fa-3x mb-3"></i>
+                    <h5>No hay alertas activas</h5>
+                    <p class="text-muted">El sistema está funcionando normalmente</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="row">
+            <!-- Estado Actual -->
+            <div class="col-md-6">
+                <div class="emergency-card">
+                    <h4><i class="fas fa-tachometer-alt me-2"></i>Estado Actual</h4>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h3 class="text-primary">{{ vehiculos_dentro }}</h3>
+                            <p>Vehículos Dentro</p>
+                        </div>
+                        <div class="col-6">
+                            <h3 class="text-{{ 'danger' if porcentaje_ocupacion > 90 else 'warning' if porcentaje_ocupacion > 75 else 'success' }}">
+                                {{ "%.1f"|format(porcentaje_ocupacion) }}%
+                            </h3>
+                            <p>Ocupación</p>
+                        </div>
+                    </div>
+                    <div class="progress" style="height: 20px;">
+                        <div class="progress-bar bg-{{ 'danger' if porcentaje_ocupacion > 90 else 'warning' if porcentaje_ocupacion > 75 else 'success' }}" 
+                             style="width: {{ porcentaje_ocupacion }}%">
+                        </div>
+                    </div>
+                    <small class="text-muted">Capacidad máxima: {{ capacidad_maxima }} vehículos</small>
+                </div>
+            </div>
+
+            <!-- Acciones de Emergencia -->
+            <div class="col-md-6">
+                <div class="emergency-card">
+                    <h4><i class="fas fa-exclamation-triangle me-2"></i>Protocolos de Emergencia</h4>
+                    <form method="POST" action="{{ url_for('seguridad.activar_emergencia') }}">
+                        <div class="mb-3">
+                            <select name="tipo_emergencia" class="form-select" required>
+                                <option value="">Seleccionar tipo de emergencia</option>
+                                <option value="incendio">Incendio</option>
+                                <option value="evacuacion">Evacuación</option>
+                                <option value="seguridad">Incidente de Seguridad</option>
+                                <option value="medica">Emergencia Médica</option>
+                                <option value="bloqueototal">Bloqueo Total</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <textarea name="descripcion" class="form-control" placeholder="Descripción de la emergencia (opcional)" rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="emergency-btn w-100">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Activar Protocolo de Emergencia
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Eventos Recientes -->
+        <div class="emergency-card">
+            <h4><i class="fas fa-history me-2"></i>Eventos de Seguridad Recientes</h4>
+            {% if eventos_recientes %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Fecha/Hora</th>
+                                <th>Vehículo</th>
+                                <th>Estado</th>
+                                <th>Observaciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for evento in eventos_recientes %}
+                                <tr>
+                                    <td>{{ evento.fecha_hora.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>
+                                        {% if evento.pase and evento.pase.vehiculo %}
+                                            {{ evento.pase.vehiculo.placa }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-danger">{{ evento.estado|title }}</span>
+                                    </td>
+                                    <td>{{ evento.observaciones or '-' }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-shield-alt text-success fa-3x mb-3"></i>
+                    <h5>No hay eventos de seguridad recientes</h5>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Actualizar página cada 30 segundos
+        setInterval(function() {
+            location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>

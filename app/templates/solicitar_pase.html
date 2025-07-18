@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitar Pase Vehicular - Sistema QR Universitario</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .form-header {
+            background: linear-gradient(135deg, #{{ '667eea' if user_type == 'estudiante' else '28a745' }} 0%, #{{ '764ba2' if user_type == 'estudiante' else '20c997' }} 100%);
+            color: white;
+            padding: 2rem 0;
+        }
+        
+        .form-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .form-floating .form-control:focus {
+            border-color: #{{ '667eea' if user_type == 'estudiante' else '28a745' }};
+            box-shadow: 0 0 0 0.25rem rgba({{ '102, 126, 234' if user_type == 'estudiante' else '40, 167, 69' }}, 0.25);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #{{ '667eea' if user_type == 'estudiante' else '28a745' }}, #{{ '764ba2' if user_type == 'estudiante' else '20c997' }});
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba({{ '102, 126, 234' if user_type == 'estudiante' else '40, 167, 69' }}, 0.3);
+        }
+        
+        .vehicle-card {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .vehicle-card:hover {
+            border-color: #{{ '667eea' if user_type == 'estudiante' else '28a745' }};
+            transform: translateY(-2px);
+        }
+        
+        .vehicle-card.selected {
+            border-color: #{{ '667eea' if user_type == 'estudiante' else '28a745' }};
+            background-color: #f8f9ff;
+        }
+        
+        .info-box {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+        
+        .step {
+            display: flex;
+            align-items: center;
+            margin: 0 1rem;
+        }
+        
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+        
+        .step.active .step-number {
+            background-color: #{{ '667eea' if user_type == 'estudiante' else '28a745' }};
+            color: white;
+        }
+        
+        .step.completed .step-number {
+            background-color: #28a745;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Header -->
+    <div class="form-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1 class="mb-0">
+                        <i class="fas fa-plus-circle me-3"></i>
+                        Solicitar Pase Vehicular
+                    </h1>
+                    <p class="mb-0 opacity-75">Complete el formulario para solicitar su pase</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <a href="{{ url_for(user_type + '.dashboard') }}" class="btn btn-light">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Volver al Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="form-card">
+                    <div class="card-body p-4">
+                        <!-- Indicador de Pasos -->
+                        <div class="step-indicator">
+                            <div class="step active">
+                                <div class="step-number">1</div>
+                                <span>Seleccionar Vehículo</span>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">2</div>
+                                <span>Tipo de Pase</span>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">3</div>
+                                <span>Confirmar</span>
+                            </div>
+                        </div>
+
+                        <!-- Alertas -->
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                                        <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' if category == 'success' else 'info-circle' }} me-2"></i>
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+
+                        <form method="POST" id="solicitudForm">
+                            <!-- Paso 1: Selección de Vehículo -->
+                            <div id="paso1" class="step-content">
+                                <h5 class="mb-3">
+                                    <i class="fas fa-car me-2"></i>
+                                    Selecciona tu vehículo
+                                </h5>
+                                
+                                {% if vehiculos %}
+                                    <div class="row g-3">
+                                        {% for vehiculo in vehiculos %}
+                                            <div class="col-md-6">
+                                                <div class="vehicle-card" data-vehiculo="{{ vehiculo.id }}">
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="fas fa-car text-primary me-3" style="font-size: 2rem;"></i>
+                                                        <div>
+                                                            <h6 class="mb-1">{{ vehiculo.placa }}</h6>
+                                                            <small class="text-muted">
+                                                                {{ vehiculo.marca }} {{ vehiculo.modelo }}
+                                                                {% if vehiculo.color %}
+                                                                    - {{ vehiculo.color }}
+                                                                {% endif %}
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                    
+                                    <input type="hidden" name="vehiculo_id" id="vehiculoSelected" required>
+                                    
+                                    <div class="text-center mt-4">
+                                        <button type="button" class="btn btn-primary" id="nextToPaso2" disabled>
+                                            <i class="fas fa-arrow-right me-2"></i>
+                                            Siguiente
+                                        </button>
+                                    </div>
+                                {% else %}
+                                    <div class="info-box text-center">
+                                        <i class="fas fa-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                                        <h5 class="mt-3">No tienes vehículos registrados</h5>
+                                        <p class="text-muted">Debes registrar al menos un vehículo antes de solicitar un pase</p>
+                                        <a href="{{ url_for(user_type + '.vehiculos') }}" class="btn btn-primary">
+                                            <i class="fas fa-plus me-2"></i>
+                                            Registrar Vehículo
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Paso 2: Tipo de Pase -->
+                            <div id="paso2" class="step-content" style="display: none;">
+                                <h5 class="mb-3">
+                                    <i class="fas fa-clipboard-list me-2"></i>
+                                    Tipo de Pase
+                                </h5>
+                                
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="vehicle-card" data-tipo="ciclo">
+                                            <div class="text-center">
+                                                <i class="fas fa-calendar-alt text-primary" style="font-size: 2rem;"></i>
+                                                <h6 class="mt-2 mb-1">Pase por Ciclo</h6>
+                                                <small class="text-muted">
+                                                    Válido durante todo el ciclo académico
+                                                    {% if ciclo_actual %}
+                                                        <br><strong>{{ ciclo_actual.nombre }}</strong>
+                                                    {% endif %}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="vehicle-card" data-tipo="temporal">
+                                            <div class="text-center">
+                                                <i class="fas fa-clock text-warning" style="font-size: 2rem;"></i>
+                                                <h6 class="mt-2 mb-1">Pase Temporal</h6>
+                                                <small class="text-muted">
+                                                    Válido por un período específico
+                                                    <br><strong>Para visitantes</strong>
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <input type="hidden" name="tipo_pase" id="tipoSelected" required>
+                                
+                                <!-- Información adicional para temporal -->
+                                <div id="fechasTemporales" style="display: none;" class="mt-3">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="form-floating">
+                                                <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio">
+                                                <label for="fecha_inicio">Fecha Inicio</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-floating">
+                                                <input type="date" class="form-control" id="fecha_fin" name="fecha_fin">
+                                                <label for="fecha_fin">Fecha Fin</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between mt-4">
+                                    <button type="button" class="btn btn-outline-secondary" id="backToPaso1">
+                                        <i class="fas fa-arrow-left me-2"></i>
+                                        Anterior
+                                    </button>
+                                    <button type="button" class="btn btn-primary" id="nextToPaso3" disabled>
+                                        <i class="fas fa-arrow-right me-2"></i>
+                                        Siguiente
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Paso 3: Confirmación -->
+                            <div id="paso3" class="step-content" style="display: none;">
+                                <h5 class="mb-3">
+                                    <i class="fas fa-check-circle me-2"></i>
+                                    Confirmar Solicitud
+                                </h5>
+                                
+                                <div class="info-box">
+                                    <h6>Resumen de la solicitud:</h6>
+                                    <div id="resumenSolicitud"></div>
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="terminos" required>
+                                    <label class="form-check-label" for="terminos">
+                                        Confirmo que la información proporcionada es correcta y acepto los términos y condiciones del sistema de gestión vehicular.
+                                    </label>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between">
+                                    <button type="button" class="btn btn-outline-secondary" id="backToPaso2">
+                                        <i class="fas fa-arrow-left me-2"></i>
+                                        Anterior
+                                    </button>
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i class="fas fa-paper-plane me-2"></i>
+                                        Enviar Solicitud
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Variables globales
+        let vehiculoSeleccionado = null;
+        let tipoSeleccionado = null;
+        let vehiculosData = {{ vehiculos | tojson }};
+        let cicloActual = {{ ciclo_actual | tojson if ciclo_actual else 'null' }};
+        
+        // Elementos DOM
+        const vehicleCards = document.querySelectorAll('.vehicle-card[data-vehiculo]');
+        const tipoCards = document.querySelectorAll('.vehicle-card[data-tipo]');
+        const steps = document.querySelectorAll('.step');
+        const stepContents = document.querySelectorAll('.step-content');
+        
+        // Paso 1: Selección de vehículo
+        vehicleCards.forEach(card => {
+            card.addEventListener('click', function() {
+                vehicleCards.forEach(c => c.classList.remove('selected'));
+                this.classList.add('selected');
+                vehiculoSeleccionado = this.dataset.vehiculo;
+                document.getElementById('vehiculoSelected').value = vehiculoSeleccionado;
+                document.getElementById('nextToPaso2').disabled = false;
+            });
+        });
+        
+        // Paso 2: Selección de tipo
+        tipoCards.forEach(card => {
+            card.addEventListener('click', function() {
+                tipoCards.forEach(c => c.classList.remove('selected'));
+                this.classList.add('selected');
+                tipoSeleccionado = this.dataset.tipo;
+                document.getElementById('tipoSelected').value = tipoSeleccionado;
+                
+                // Mostrar/ocultar campos de fecha para temporal
+                const fechasTemporales = document.getElementById('fechasTemporales');
+                if (tipoSeleccionado === 'temporal') {
+                    fechasTemporales.style.display = 'block';
+                    document.getElementById('fecha_inicio').required = true;
+                    document.getElementById('fecha_fin').required = true;
+                } else {
+                    fechasTemporales.style.display = 'none';
+                    document.getElementById('fecha_inicio').required = false;
+                    document.getElementById('fecha_fin').required = false;
+                }
+                
+                document.getElementById('nextToPaso3').disabled = false;
+            });
+        });
+        
+        // Navegación entre pasos
+        document.getElementById('nextToPaso2').addEventListener('click', () => mostrarPaso(2));
+        document.getElementById('nextToPaso3').addEventListener('click', () => {
+            if (tipoSeleccionado === 'temporal') {
+                const fechaInicio = document.getElementById('fecha_inicio').value;
+                const fechaFin = document.getElementById('fecha_fin').value;
+                if (!fechaInicio || !fechaFin) {
+                    alert('Por favor, selecciona las fechas para el pase temporal');
+                    return;
+                }
+            }
+            mostrarPaso(3);
+            mostrarResumen();
+        });
+        
+        document.getElementById('backToPaso1').addEventListener('click', () => mostrarPaso(1));
+        document.getElementById('backToPaso2').addEventListener('click', () => mostrarPaso(2));
+        
+        function mostrarPaso(paso) {
+            // Ocultar todos los pasos
+            stepContents.forEach(content => content.style.display = 'none');
+            steps.forEach(step => step.classList.remove('active'));
+            
+            // Mostrar paso actual
+            document.getElementById(`paso${paso}`).style.display = 'block';
+            steps[paso - 1].classList.add('active');
+            
+            // Marcar pasos completados
+            for (let i = 0; i < paso - 1; i++) {
+                steps[i].classList.add('completed');
+            }
+        }
+        
+        function mostrarResumen() {
+            const vehiculo = vehiculosData.find(v => v.id == vehiculoSeleccionado);
+            const resumen = document.getElementById('resumenSolicitud');
+            
+            let contenido = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Vehículo:</strong><br>
+                        <i class="fas fa-car me-2"></i>${vehiculo.placa}<br>
+                        <small class="text-muted">${vehiculo.marca} ${vehiculo.modelo}</small>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Tipo de Pase:</strong><br>
+                        <i class="fas fa-${tipoSeleccionado === 'ciclo' ? 'calendar-alt' : 'clock'} me-2"></i>
+                        ${tipoSeleccionado === 'ciclo' ? 'Pase por Ciclo' : 'Pase Temporal'}
+            `;
+            
+            if (tipoSeleccionado === 'ciclo' && cicloActual) {
+                contenido += `<br><small class="text-muted">${cicloActual.nombre}</small>`;
+            } else if (tipoSeleccionado === 'temporal') {
+                const fechaInicio = document.getElementById('fecha_inicio').value;
+                const fechaFin = document.getElementById('fecha_fin').value;
+                contenido += `<br><small class="text-muted">${fechaInicio} - ${fechaFin}</small>`;
+            }
+            
+            contenido += `
+                    </div>
+                </div>
+            `;
+            
+            resumen.innerHTML = contenido;
+        }
+        
+        // Configurar fechas mínimas para temporal
+        const hoy = new Date().toISOString().split('T')[0];
+        document.getElementById('fecha_inicio').min = hoy;
+        document.getElementById('fecha_fin').min = hoy;
+        
+        // Actualizar fecha fin cuando cambie fecha inicio
+        document.getElementById('fecha_inicio').addEventListener('change', function() {
+            document.getElementById('fecha_fin').min = this.value;
+        });
+    </script>
+</body>
+</html>

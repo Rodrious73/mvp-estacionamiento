@@ -1,0 +1,692 @@
+<!-- filepath: d:\Documentos\PythonProjects\python-estacionamientos\app\templates\seguridad\scanner.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Escáner QR - Sistema de Estacionamientos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        .security-header {
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+        
+        .scanner-container {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .scanner-area {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .manual-input {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .validation-result {
+            margin-top: 2rem;
+        }
+        
+        .vehicle-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+        
+        .btn-scan {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-scan:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(40, 167, 69, 0.3);
+            color: white;
+        }
+        
+        #reader {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        /* Estilos específicos para iOS */
+        @supports (-webkit-touch-callout: none) {
+            #reader {
+                -webkit-transform: translateZ(0);
+                transform: translateZ(0);
+            }
+            
+            .scanner-area {
+                -webkit-transform: translate3d(0,0,0);
+                transform: translate3d(0,0,0);
+            }
+        }
+        
+        /* Mejoras para dispositivos móviles */
+        @media (max-width: 768px) {
+            .scanner-container {
+                padding: 1rem;
+            }
+            
+            .scanner-area {
+                padding: 1rem;
+            }
+            
+            #reader {
+                max-width: 100%;
+                height: auto;
+            }
+            
+            .btn-scan {
+                padding: 0.75rem 1.5rem;
+                font-size: 1rem;
+            }
+        }
+        
+        /* Fix para iOS Safari */
+        @media screen and (-webkit-min-device-pixel-ratio: 0) {
+            select:focus,
+            textarea:focus,
+            input:focus {
+                font-size: 16px !important;
+            }
+        }
+    </style>
+</head>
+<body style="background-color: #f5f6fa;">
+    <!-- Header -->
+    <div class="security-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1 class="mb-0">
+                        <i class="fas fa-qrcode me-2"></i>
+                        Escáner de Código QR
+                    </h1>
+                    <p class="mb-0 mt-2 opacity-75">
+                        Validación de pases vehiculares
+                    </p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <a href="{{ url_for('seguridad.dashboard') }}" class="btn btn-outline-light">
+                        <i class="fas fa-arrow-left me-2"></i>Volver al Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Mensajes Flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row">
+            <!-- Escáner QR -->
+            <div class="col-md-8">
+                <div class="scanner-container">
+                    <h4 class="mb-3">
+                        <i class="fas fa-camera me-2"></i>Escáner de Cámara
+                    </h4>
+                    
+                    <div class="scanner-area">
+                        <div id="reader-container">
+                            <div id="reader"></div>
+                            <div id="scanner-inactive" class="text-center">
+                                <i class="fas fa-qrcode" style="font-size: 4rem; color: #dee2e6; margin-bottom: 1rem;"></i>
+                                <h5>Escáner de QR Inactivo</h5>
+                                <p class="text-muted">Haz clic en "Iniciar Escáner" para comenzar</p>
+                                <button onclick="startScanner()" class="btn btn-scan">
+                                    <i class="fas fa-play me-2"></i>Iniciar Escáner
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <button id="stop-scanner" onclick="stopScanner()" class="btn btn-danger me-2" style="display: none;">
+                            <i class="fas fa-stop me-2"></i>Detener Escáner
+                        </button>
+                        <button onclick="switchCamera()" class="btn btn-secondary" id="switch-camera" style="display: none;">
+                            <i class="fas fa-sync-alt me-2"></i>Cambiar Cámara
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Entrada Manual -->
+                <div class="manual-input">
+                    <h4 class="mb-3">
+                        <i class="fas fa-keyboard me-2"></i>Entrada Manual
+                    </h4>
+                    <form method="POST" action="{{ url_for('seguridad.validar_codigo') }}">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <input type="text" class="form-control form-control-lg" 
+                                       name="codigo_qr" id="codigo_manual" 
+                                       placeholder="Ingresa el código QR manualmente"
+                                       required>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-primary btn-lg w-100">
+                                    <i class="fas fa-check me-2"></i>Validar
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Panel de información -->
+            <div class="col-md-4">
+                <div class="scanner-container">
+                    <h4 class="mb-3">
+                        <i class="fas fa-info-circle me-2"></i>Información
+                    </h4>
+                    
+                    <div class="mb-3">
+                        <h6>Instrucciones:</h6>
+                        <ol class="small">
+                            <li>Haz clic en "Iniciar Escáner"</li>
+                            <li>Enfoca el código QR del pase</li>
+                            <li>Espera la validación automática</li>
+                            <li>Registra entrada/salida según corresponda</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6>Estados de Validación:</h6>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="badge bg-success me-2">●</span>
+                            <small>Pase válido</small>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="badge bg-danger me-2">●</span>
+                            <small>Pase expirado/inválido</small>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="badge bg-warning me-2">●</span>
+                            <small>Pase suspendido</small>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        <strong>Tip:</strong> En caso de problemas con la cámara, utiliza la entrada manual.
+                    </div>
+                </div>
+
+                <!-- Últimas validaciones -->
+                <div class="scanner-container">
+                    <h4 class="mb-3">
+                        <i class="fas fa-history me-2"></i>Últimas Validaciones
+                    </h4>
+                    
+                    {% for validacion in validaciones_recientes %}
+                    <div class="d-flex align-items-center mb-3 p-2 border-bottom">
+                        <div class="me-3">
+                            <span class="badge bg-{{ 'success' if validacion.valido else 'danger' }}">
+                                <i class="fas fa-{{ 'check' if validacion.valido else 'times' }}"></i>
+                            </span>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="small">
+                                <strong>{{ validacion.placa }}</strong>
+                                <div class="text-muted">{{ validacion.hora }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Resultado de validación -->
+        <div id="validation-result" class="validation-result" style="display: none;"></div>
+    </div>
+
+    <!-- Modal de resultado -->
+    <div class="modal fade" id="resultModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-qrcode me-2"></i>Resultado de Validación
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="modal-content">
+                    <!-- Contenido dinámico -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" id="register-access" style="display: none;">
+                        Registrar Acceso
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let html5QrcodeScanner = null;
+        let isScanning = false;
+        let availableCameras = [];
+        let currentCameraIndex = 0;
+
+        function startScanner() {
+            const config = { 
+                fps: 10, 
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0,
+                // Configuraciones específicas para iOS
+                experimentalFeatures: {
+                    useBarCodeDetectorIfSupported: true
+                }
+            };
+
+            html5QrcodeScanner = new Html5Qrcode("reader");
+            
+            Html5Qrcode.getCameras().then(devices => {
+                console.log('Cámaras disponibles:', devices);
+                availableCameras = devices;
+                
+                if (devices && devices.length) {
+                    // En iOS, buscar específicamente la cámara trasera
+                    let backCameraIndex = devices.findIndex(device => 
+                        device.label.toLowerCase().includes('back') || 
+                        device.label.toLowerCase().includes('rear') ||
+                        device.label.toLowerCase().includes('environment')
+                    );
+                    
+                    // Si no encuentra cámara trasera, usar la primera disponible
+                    if (backCameraIndex === -1) {
+                        backCameraIndex = 0;
+                    }
+                    
+                    currentCameraIndex = backCameraIndex;
+                    const cameraId = devices[currentCameraIndex].id;
+                    
+                    console.log(`Iniciando con cámara: ${devices[currentCameraIndex].label}`);
+                    
+                    html5QrcodeScanner.start(
+                        cameraId,
+                        config,
+                        onScanSuccess,
+                        onScanFailure
+                    ).then(() => {
+                        isScanning = true;
+                        document.getElementById('scanner-inactive').style.display = 'none';
+                        document.getElementById('stop-scanner').style.display = 'inline-block';
+                        
+                        // Mostrar botón de cambiar cámara solo si hay múltiples cámaras
+                        if (devices.length > 1) {
+                            document.getElementById('switch-camera').style.display = 'inline-block';
+                        }
+                    }).catch(err => {
+                        console.error('Error al iniciar el escáner:', err);
+                        
+                        // En iOS, intentar con configuración más básica
+                        if (navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')) {
+                            startScannerFallback();
+                        } else {
+                            alert('Error al acceder a la cámara. Intenta usar la entrada manual.');
+                        }
+                    });
+                }
+            }).catch(err => {
+                console.error('Error al obtener cámaras:', err);
+                
+                // Fallback para iOS
+                if (navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')) {
+                    startScannerFallback();
+                } else {
+                    alert('No se pudieron obtener las cámaras disponibles.');
+                }
+            });
+        }
+
+        function startScannerFallback() {
+            console.log('Intentando configuración fallback para iOS...');
+            
+            // Configuración más básica para iOS
+            const fallbackConfig = { 
+                fps: 5, 
+                qrbox: 200,
+                // Usar restricciones específicas para iOS
+                facingMode: "environment" // Esto debería usar la cámara trasera
+            };
+
+            html5QrcodeScanner.start(
+                { facingMode: "environment" }, // Usar facingMode en lugar de cameraId
+                fallbackConfig,
+                onScanSuccess,
+                onScanFailure
+            ).then(() => {
+                isScanning = true;
+                document.getElementById('scanner-inactive').style.display = 'none';
+                document.getElementById('stop-scanner').style.display = 'inline-block';
+                document.getElementById('switch-camera').style.display = 'inline-block';
+                console.log('Escáner iniciado con configuración fallback');
+            }).catch(err => {
+                console.error('Error en configuración fallback:', err);
+                alert('Error al acceder a la cámara. Por favor, permite el acceso a la cámara y refresca la página.');
+            });
+        }
+
+        function stopScanner() {
+            if (html5QrcodeScanner && isScanning) {
+                html5QrcodeScanner.stop().then(() => {
+                    html5QrcodeScanner.clear();
+                    isScanning = false;
+                    document.getElementById('scanner-inactive').style.display = 'block';
+                    document.getElementById('stop-scanner').style.display = 'none';
+                    document.getElementById('switch-camera').style.display = 'none';
+                }).catch(err => {
+                    console.error('Error al detener el escáner:', err);
+                });
+            }
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            console.log('QR escaneado:', decodedText);
+            
+            // Detener el escáner
+            stopScanner();
+            
+            // Validar el código
+            validateCode(decodedText);
+        }
+
+        function onScanFailure(error) {
+            // No hacer nada, es normal que falle mientras busca códigos
+        }
+
+        function validateCode(codigo) {
+            fetch('/seguridad/validar-codigo-ajax', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ codigo: codigo })
+            })
+            .then(response => response.json())
+            .then(data => {
+                showValidationResult(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al validar el código');
+            });
+        }
+
+        function showValidationResult(data) {
+        const modalContent = document.getElementById('modal-content');
+        const registerBtn = document.getElementById('register-access');
+        
+        if (data.valido) {
+            modalContent.innerHTML = `
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong>Pase Válido</strong>
+                </div>
+                
+                <div class="vehicle-info">
+                    <h5><i class="fas fa-user me-2"></i>${data.usuario}</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Placa:</strong> ${data.placa}<br>
+                            <strong>Marca:</strong> ${data.marca}<br>
+                            <strong>Modelo:</strong> ${data.modelo}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Válido hasta:</strong> ${data.fecha_fin}<br>
+                            <strong>Tipo:</strong> ${data.tipo}<br>
+                            <strong>Estado:</strong> <span class="badge bg-success">${data.estado}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <h6>Selecciona el tipo de acceso:</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <button class="btn btn-success w-100" onclick="registrarEntrada('${data.pase_id}')">
+                                <i class="fas fa-sign-in-alt me-2"></i>Entrada
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <button class="btn btn-danger w-100" onclick="registrarSalida('${data.pase_id}')">
+                                <i class="fas fa-sign-out-alt me-2"></i>Salida
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            modalContent.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-times-circle me-2"></i>
+                    <strong>Pase Inválido</strong>
+                </div>
+                <p>${data.mensaje}</p>
+            `;
+        }
+        
+        const modal = new bootstrap.Modal(document.getElementById('resultModal'));
+        modal.show();
+    }
+
+    function registrarEntrada(paseId) {
+        // Para entrada: registrar acceso Y asignar estacionamiento
+        fetch('/seguridad/registrar-entrada-con-estacionamiento', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                pase_id: paseId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Entrada registrada correctamente.\nEspacio asignado: ${data.espacio_asignado}`);
+                const modal = bootstrap.Modal.getInstance(document.getElementById('resultModal'));
+                modal.hide();
+                location.reload();
+            } else {
+                alert('Error: ' + data.mensaje);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al registrar la entrada');
+        });
+    }
+
+    function registrarSalida(paseId) {
+        // Para salida: registrar acceso Y liberar estacionamiento
+        fetch('/seguridad/registrar-salida-con-liberacion', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                pase_id: paseId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Salida registrada correctamente.\nEspacio liberado: ${data.espacio_liberado}`);
+                const modal = bootstrap.Modal.getInstance(document.getElementById('resultModal'));
+                modal.hide();
+                location.reload();
+            } else {
+                alert('Error: ' + data.mensaje);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al registrar la salida');
+        });
+    }
+
+        function switchCamera() {
+            if (availableCameras.length <= 1) {
+                alert('Solo hay una cámara disponible');
+                return;
+            }
+
+            if (!isScanning) {
+                alert('El escáner no está activo');
+                return;
+            }
+
+            // Detener el escáner actual
+            html5QrcodeScanner.stop().then(() => {
+                // Cambiar al siguiente índice de cámara
+                currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
+                const nextCamera = availableCameras[currentCameraIndex];
+                
+                console.log(`Cambiando a cámara: ${nextCamera.label}`);
+                
+                // Configuración para la nueva cámara
+                const config = { 
+                    fps: 10, 
+                    qrbox: { width: 250, height: 250 },
+                    aspectRatio: 1.0,
+                    experimentalFeatures: {
+                        useBarCodeDetectorIfSupported: true
+                    }
+                };
+
+                // Reiniciar con la nueva cámara
+                html5QrcodeScanner.start(
+                    nextCamera.id,
+                    config,
+                    onScanSuccess,
+                    onScanFailure
+                ).then(() => {
+                    console.log('Cámara cambiada exitosamente');
+                }).catch(err => {
+                    console.error('Error al cambiar cámara:', err);
+                    
+                    // En iOS, intentar con facingMode
+                    if (navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')) {
+                        const facingMode = currentCameraIndex % 2 === 0 ? "environment" : "user";
+                        
+                        html5QrcodeScanner.start(
+                            { facingMode: facingMode },
+                            { fps: 5, qrbox: 200 },
+                            onScanSuccess,
+                            onScanFailure
+                        ).catch(fallbackErr => {
+                            console.error('Error en fallback de cambio de cámara:', fallbackErr);
+                            alert('Error al cambiar de cámara');
+                        });
+                    } else {
+                        alert('Error al cambiar de cámara');
+                    }
+                });
+            }).catch(err => {
+                console.error('Error al detener escáner para cambio:', err);
+            });
+        }
+
+        // Detectar si es iOS
+        function isIOSDevice() {
+            return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        }
+
+        // Verificar permisos de cámara en iOS
+        function checkCameraPermissions() {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                return navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(stream => {
+                        // Detener el stream inmediatamente, solo estamos verificando permisos
+                        stream.getTracks().forEach(track => track.stop());
+                        return true;
+                    })
+                    .catch(err => {
+                        console.error('Error de permisos de cámara:', err);
+                        return false;
+                    });
+            }
+            return Promise.resolve(false);
+        }
+
+        // Mostrar mensaje específico para iOS si es necesario
+        function showIOSInstructions() {
+            if (isIOSDevice()) {
+                const instructionsDiv = document.querySelector('.alert-info');
+                if (instructionsDiv) {
+                    instructionsDiv.innerHTML = `
+                        <i class="fas fa-lightbulb me-2"></i>
+                        <strong>Instrucciones para iPhone/iPad:</strong><br>
+                        1. Asegúrate de permitir el acceso a la cámara cuando se solicite<br>
+                        2. Si no aparece la cámara trasera, usa el botón "Cambiar Cámara"<br>
+                        3. En caso de problemas, refresca la página y vuelve a intentar
+                    `;
+                }
+            }
+        }
+
+        // Inicialización cuando se carga la página
+        document.addEventListener('DOMContentLoaded', function() {
+            showIOSInstructions();
+            
+            // En iOS, verificar permisos al cargar
+            if (isIOSDevice()) {
+                checkCameraPermissions().then(hasPermission => {
+                    if (!hasPermission) {
+                        console.log('Permisos de cámara no otorgados aún');
+                    }
+                });
+            }
+        });
+
+        // Limpiar al salir de la página
+        window.addEventListener('beforeunload', function() {
+            if (isScanning) {
+                stopScanner();
+            }
+        });
+    </script>
+</body>
+</html>

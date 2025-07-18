@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pase Vehicular - Sistema QR Universitario</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .page-header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+        
+        .pase-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+        
+        .pase-header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        
+        .pase-content {
+            padding: 2rem;
+        }
+        
+        .qr-container {
+            text-align: center;
+            padding: 2rem;
+            background: #f8f9fa;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+        }
+        
+        .qr-code {
+            width: 250px;
+            height: 250px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            margin: 0 auto;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: #6c757d;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .info-card {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 10px;
+            border-left: 4px solid #28a745;
+        }
+        
+        .info-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 0.5rem;
+        }
+        
+        .info-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #212529;
+        }
+        
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            border: none;
+            border-radius: 10px;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+        }
+        
+        .alert {
+            border-radius: 10px;
+            border: none;
+        }
+        
+        .validity-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .validity-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        .validity-dot.valid {
+            background: #28a745;
+        }
+        
+        .validity-dot.expired {
+            background: #dc3545;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .usage-instructions {
+            background: #e8f5e8;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .print-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        @media print {
+            body { background: white !important; }
+            .page-header, .btn, .alert { display: none !important; }
+            .pase-card { box-shadow: none !important; margin: 0 !important; }
+            .print-section { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body style="background-color: #f5f6fa;">
+    <div class="page-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-qrcode me-2"></i>
+                        Pase Vehicular
+                    </h1>
+                    <p class="mb-0 opacity-75">Código QR para acceso vehicular</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <a href="{{ url_for('docente.dashboard') }}" class="btn btn-light me-2">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Volver al Dashboard
+                    </a>
+                    <button type="button" class="btn btn-outline-light" onclick="window.print()">
+                        <i class="fas fa-print me-2"></i>
+                        Imprimir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Alertas -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' if category == 'success' else 'info-circle' }} me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Pase Vehicular -->
+        <div class="pase-card">
+            <div class="pase-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    Pase Vehicular Universitario
+                </h4>
+                <p class="mb-0 opacity-75">Universidad - Sistema de Control de Acceso</p>
+            </div>
+            
+            <div class="pase-content">
+                <!-- Código QR -->
+                <div class="qr-container">
+                    <div class="qr-code">
+                        <i class="fas fa-qrcode"></i>
+                    </div>
+                    <div class="mt-3">
+                        <h6 class="mb-1">Código QR</h6>
+                        <p class="text-muted small mb-0">Presenta este código en el acceso vehicular</p>
+                        <div class="validity-indicator justify-content-center">
+                            <div class="validity-dot {{ 'valid' if pase.esta_vigente() else 'expired' }}"></div>
+                            <span class="small text-{{ 'success' if pase.esta_vigente() else 'danger' }}">
+                                {{ 'Pase Vigente' if pase.esta_vigente() else 'Pase Expirado' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información del Pase -->
+                <div class="info-grid">
+                    <div class="info-card">
+                        <div class="info-label">
+                            <i class="fas fa-hashtag me-1"></i>
+                            Número de Pase
+                        </div>
+                        <div class="info-value">#{{ pase.id }}</div>
+                    </div>
+                    
+                    <div class="info-card">
+                        <div class="info-label">
+                            <i class="fas fa-car me-1"></i>
+                            Vehículo
+                        </div>
+                        <div class="info-value">
+                            {{ pase.vehiculo.placa }}
+                            <small class="d-block text-muted">{{ pase.vehiculo.marca }} {{ pase.vehiculo.modelo }}</small>
+                        </div>
+                    </div>
+                    
+                    <div class="info-card">
+                        <div class="info-label">
+                            <i class="fas fa-user-tie me-1"></i>
+                            Propietario
+                        </div>
+                        <div class="info-value">
+                            {{ pase.usuario.nombre }}
+                            <small class="d-block text-muted">{{ pase.usuario.codigo_universitario }}</small>
+                        </div>
+                    </div>
+                    
+                    <div class="info-card">
+                        <div class="info-label">
+                            <i class="fas fa-calendar-alt me-1"></i>
+                            Vigencia
+                        </div>
+                        <div class="info-value">
+                            {{ pase.fecha_inicio.strftime('%d/%m/%Y') }} - {{ pase.fecha_fin.strftime('%d/%m/%Y') }}
+                        </div>
+                    </div>
+                    
+                    <div class="info-card">
+                        <div class="info-label">
+                            <i class="fas fa-tags me-1"></i>
+                            Tipo de Pase
+                        </div>
+                        <div class="info-value">
+                            <span class="badge bg-{{ 'primary' if pase.solicitud.tipo_pase == 'ciclo' else 'info' }}">
+                                {{ pase.solicitud.tipo_pase.title() }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="info-card">
+                        <div class="info-label">
+                            <i class="fas fa-check-circle me-1"></i>
+                            Estado
+                        </div>
+                        <div class="info-value">
+                            <span class="status-badge bg-{{ 'success' if pase.estado == 'vigente' else 'warning' if pase.estado == 'suspendido' else 'danger' }} text-white">
+                                {{ pase.estado.title() }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Instrucciones de Uso -->
+                <div class="usage-instructions">
+                    <h6 class="mb-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Instrucciones de Uso
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center mb-3">
+                                <i class="fas fa-mobile-alt text-success" style="font-size: 2rem;"></i>
+                                <p class="small mt-2 mb-0">
+                                    <strong>1. Presenta el código</strong><br>
+                                    Muestra este QR en tu dispositivo
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center mb-3">
+                                <i class="fas fa-barcode text-success" style="font-size: 2rem;"></i>
+                                <p class="small mt-2 mb-0">
+                                    <strong>2. Escaneo automático</strong><br>
+                                    El sistema validará tu pase
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center mb-3">
+                                <i class="fas fa-door-open text-success" style="font-size: 2rem;"></i>
+                                <p class="small mt-2 mb-0">
+                                    <strong>3. Acceso autorizado</strong><br>
+                                    Ingresa siguiendo las normas
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información Adicional -->
+                {% if pase.solicitud.ciclo %}
+                    <div class="info-card">
+                        <div class="info-label">
+                            <i class="fas fa-graduation-cap me-1"></i>
+                            Ciclo Académico
+                        </div>
+                        <div class="info-value">
+                            {{ pase.solicitud.ciclo.nombre }}
+                            <small class="d-block text-muted">
+                                {{ pase.solicitud.ciclo.fecha_inicio.strftime('%d/%m/%Y') }} - 
+                                {{ pase.solicitud.ciclo.fecha_fin.strftime('%d/%m/%Y') }}
+                            </small>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Código QR Textual -->
+                <div class="text-center mt-4">
+                    <h6 class="text-muted">Código QR: {{ pase.qr_code }}</h6>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información del Sistema -->
+        <div class="print-section">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h6 class="mb-1">Sistema de Control de Acceso Vehicular</h6>
+                    <p class="text-muted small mb-0">
+                        Este documento es válido únicamente para el vehículo y periodo indicados. 
+                        Debe ser presentado junto con documentos de identidad y registro vehicular.
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <p class="small text-muted mb-0">
+                        Generado el: {{ pase.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Generar QR Code usando una librería externa
+        document.addEventListener('DOMContentLoaded', function() {
+            const qrContainer = document.querySelector('.qr-code');
+            const qrCode = '{{ pase.qr_code }}';
+            
+            // Aquí podrías integrar una librería como QRCode.js
+            // Por ahora, mostramos el texto del QR
+            qrContainer.innerHTML = `
+                <div style="font-size: 0.8rem; word-break: break-all; padding: 1rem;">
+                    ${qrCode}
+                </div>
+            `;
+        });
+        
+        // Actualizar estado de validez en tiempo real
+        setInterval(function() {
+            const fechaFin = new Date('{{ pase.fecha_fin.strftime("%Y-%m-%d") }}T23:59:59');
+            const ahora = new Date();
+            const validityDots = document.querySelectorAll('.validity-dot');
+            const validityTexts = document.querySelectorAll('.validity-indicator span');
+            
+            if (ahora <= fechaFin) {
+                validityDots.forEach(dot => {
+                    dot.classList.remove('expired');
+                    dot.classList.add('valid');
+                });
+                validityTexts.forEach(text => {
+                    text.textContent = 'Pase Vigente';
+                    text.classList.remove('text-danger');
+                    text.classList.add('text-success');
+                });
+            } else {
+                validityDots.forEach(dot => {
+                    dot.classList.remove('valid');
+                    dot.classList.add('expired');
+                });
+                validityTexts.forEach(text => {
+                    text.textContent = 'Pase Expirado';
+                    text.classList.remove('text-success');
+                    text.classList.add('text-danger');
+                });
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

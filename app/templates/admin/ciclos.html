@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestión de Ciclos Académicos - Administrador{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-calendar-alt"></i> Gestión de Ciclos Académicos
+                    </h4>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#crearCicloModal">
+                        <i class="fas fa-plus"></i> Crear Nuevo Ciclo
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if ciclos %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Fecha Inicio</th>
+                                        <th>Fecha Fin</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for ciclo in ciclos %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ ciclo.nombre }}</strong>
+                                            {% if ciclo.estado == 'activo' %}
+                                                <span class="badge bg-success ms-2">ACTIVO</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ ciclo.fecha_inicio.strftime('%d/%m/%Y') }}</td>
+                                        <td>{{ ciclo.fecha_fin.strftime('%d/%m/%Y') }}</td>
+                                        <td>
+                                            {% if ciclo.estado == 'activo' %}
+                                                <span class="badge bg-success">Activo</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Inactivo</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if ciclo.estado != 'activo' %}
+                                                <button class="btn btn-sm btn-success" onclick="activarCiclo({{ ciclo.id }})">
+                                                    <i class="fas fa-play"></i> Activar
+                                                </button>
+                                            {% else %}
+                                                <button class="btn btn-sm btn-warning" onclick="desactivarCiclo({{ ciclo.id }})">
+                                                    <i class="fas fa-pause"></i> Desactivar
+                                                </button>
+                                            {% endif %}
+                                            <button class="btn btn-sm btn-info" onclick="editarCiclo({{ ciclo.id }}, '{{ ciclo.nombre }}', '{{ ciclo.fecha_inicio.strftime('%Y-%m-%d') }}', '{{ ciclo.fecha_fin.strftime('%Y-%m-%d') }}')">
+                                                <i class="fas fa-edit"></i> Editar
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" onclick="eliminarCiclo({{ ciclo.id }})">
+                                                <i class="fas fa-trash"></i> Eliminar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info text-center">
+                            <i class="fas fa-info-circle"></i>
+                            No hay ciclos académicos registrados.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para crear ciclo -->
+<div class="modal fade" id="crearCicloModal" tabindex="-1" aria-labelledby="crearCicloModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="crearCicloModalLabel">Crear Nuevo Ciclo Académico</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="crearCicloForm" action="{{ url_for('admin.crear_ciclo') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">Nombre del Ciclo</label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" required
+                               placeholder="Ej: 2025-I, 2025-II, etc.">
+                    </div>
+                    <div class="mb-3">
+                        <label for="fecha_inicio" class="form-label">Fecha de Inicio</label>
+                        <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="fecha_fin" class="form-label">Fecha de Fin</label>
+                        <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" required>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="activar_inmediatamente" name="activar_inmediatamente">
+                        <label class="form-check-label" for="activar_inmediatamente">
+                            Activar inmediatamente (desactivará otros ciclos)
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Crear Ciclo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para editar ciclo -->
+<div class="modal fade" id="editarCicloModal" tabindex="-1" aria-labelledby="editarCicloModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editarCicloModalLabel">Editar Ciclo Académico</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editarCicloForm" method="POST">
+                <div class="modal-body">
+                    <input type="hidden" id="edit_ciclo_id" name="ciclo_id">
+                    <div class="mb-3">
+                        <label for="edit_nombre" class="form-label">Nombre del Ciclo</label>
+                        <input type="text" class="form-control" id="edit_nombre" name="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_fecha_inicio" class="form-label">Fecha de Inicio</label>
+                        <input type="date" class="form-control" id="edit_fecha_inicio" name="fecha_inicio" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_fecha_fin" class="form-label">Fecha de Fin</label>
+                        <input type="date" class="form-control" id="edit_fecha_fin" name="fecha_fin" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Actualizar Ciclo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function activarCiclo(cicloId) {
+    if (confirm('¿Estás seguro de que quieres activar este ciclo? Esto desactivará todos los demás ciclos.')) {
+        fetch(`{{ url_for('admin.activar_ciclo_ajax', ciclo_id=0) }}`.replace('0', cicloId), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error al activar el ciclo: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al activar el ciclo');
+        });
+    }
+}
+
+function desactivarCiclo(cicloId) {
+    if (confirm('¿Estás seguro de que quieres desactivar este ciclo?')) {
+        fetch(`{{ url_for('admin.desactivar_ciclo', ciclo_id=0) }}`.replace('0', cicloId), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error al desactivar el ciclo: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al desactivar el ciclo');
+        });
+    }
+}
+
+function editarCiclo(cicloId, nombre, fechaInicio, fechaFin) {
+    document.getElementById('edit_ciclo_id').value = cicloId;
+    document.getElementById('edit_nombre').value = nombre;
+    document.getElementById('edit_fecha_inicio').value = fechaInicio;
+    document.getElementById('edit_fecha_fin').value = fechaFin;
+    
+    document.getElementById('editarCicloForm').action = `{{ url_for('admin.editar_ciclo', ciclo_id=0) }}`.replace('0', cicloId);
+    
+    new bootstrap.Modal(document.getElementById('editarCicloModal')).show();
+}
+
+function eliminarCiclo(cicloId) {
+    if (confirm('¿Estás seguro de que quieres eliminar este ciclo? Esta acción no se puede deshacer.')) {
+        fetch(`{{ url_for('admin.eliminar_ciclo', ciclo_id=0) }}`.replace('0', cicloId), {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error al eliminar el ciclo: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al eliminar el ciclo');
+        });
+    }
+}
+
+// Validación de fechas
+document.getElementById('fecha_inicio').addEventListener('change', function() {
+    const fechaInicio = new Date(this.value);
+    const fechaFin = document.getElementById('fecha_fin');
+    
+    if (fechaFin.value) {
+        const fechaFinValue = new Date(fechaFin.value);
+        if (fechaInicio >= fechaFinValue) {
+            alert('La fecha de inicio debe ser anterior a la fecha de fin');
+            this.value = '';
+        }
+    }
+});
+
+document.getElementById('fecha_fin').addEventListener('change', function() {
+    const fechaFin = new Date(this.value);
+    const fechaInicio = document.getElementById('fecha_inicio');
+    
+    if (fechaInicio.value) {
+        const fechaInicioValue = new Date(fechaInicio.value);
+        if (fechaFin <= fechaInicioValue) {
+            alert('La fecha de fin debe ser posterior a la fecha de inicio');
+            this.value = '';
+        }
+    }
+});
+</script>
+{% endblock %}

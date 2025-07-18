@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Estudiante - Sistema QR Universitario</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .dashboard-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+        }
+        
+        .stats-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #667eea;
+            transition: transform 0.3s ease;
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+        
+        .alert-custom {
+            border-radius: 10px;
+            border: none;
+        }
+        
+        .card-action {
+            border: none;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .card-action:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+        }
+        
+        .table-responsive {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1 class="mb-0">
+                        <i class="fas fa-graduation-cap me-3"></i>
+                        Dashboard Estudiante
+                    </h1>
+                    <p class="mb-0 opacity-75">Bienvenido, {{ user.name }}</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="d-flex gap-2 justify-content-md-end">
+                        <a href="{{ url_for('auth.logout') }}" class="btn btn-light">
+                            <i class="fas fa-sign-out-alt me-2"></i>
+                            Cerrar Sesión
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <!-- Información del Usuario -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-user-circle text-primary me-3" style="font-size: 2rem;"></i>
+                        <div>
+                            <h6 class="mb-0">Código Universitario</h6>
+                            <strong>{{ user.codigo }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-id-card text-success me-3" style="font-size: 2rem;"></i>
+                        <div>
+                            <h6 class="mb-0">DNI</h6>
+                            <strong>{{ user.dni }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-car text-warning me-3" style="font-size: 2rem;"></i>
+                        <div>
+                            <h6 class="mb-0">Vehículos</h6>
+                            <strong>{{ vehiculos|length }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alertas -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-custom alert-dismissible fade show" role="alert">
+                        <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' if category == 'success' else 'info-circle' }} me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row">
+            <!-- Panel Principal -->
+            <div class="col-lg-8">
+                <!-- Acciones Rápidas -->
+                <div class="card card-action mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-bolt me-2"></i>
+                            Acciones Rápidas
+                        </h5>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <a href="{{ url_for('estudiante.solicitar_pase') }}" class="btn btn-primary btn-lg w-100">
+                                    <i class="fas fa-plus-circle me-2"></i>
+                                    Solicitar Pase Vehicular
+                                </a>
+                            </div>
+                            <div class="col-md-6">
+                                <a href="{{ url_for('estudiante.vehiculos') }}" class="btn btn-outline-primary btn-lg w-100">
+                                    <i class="fas fa-car me-2"></i>
+                                    Gestionar Vehículos
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mis Solicitudes -->
+                <div class="card card-action">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-file-alt me-2"></i>
+                            Mis Solicitudes de Pase
+                        </h5>
+                        
+                        {% if solicitudes %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Tipo</th>
+                                            <th>Vehículo</th>
+                                            <th>Fecha Solicitud</th>
+                                            <th>Estado</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for solicitud in solicitudes %}
+                                        <tr>
+                                            <td>
+                                                <span class="badge bg-{{ 'primary' if solicitud.tipo_pase == 'ciclo' else 'info' }}">
+                                                    {{ solicitud.tipo_pase.title() }}
+                                                </span>
+                                            </td>
+                                            <td>{{ solicitud.vehiculo.placa }}</td>
+                                            <td>{{ solicitud.fecha_solicitud.strftime('%d/%m/%Y') }}</td>
+                                            <td>
+                                                {% if solicitud.estado == 'pendiente' %}
+                                                    <span class="status-badge bg-warning text-dark">Pendiente</span>
+                                                {% elif solicitud.estado == 'aprobado' %}
+                                                    <span class="status-badge bg-success text-white">Aprobado</span>
+                                                {% else %}
+                                                    <span class="status-badge bg-danger text-white">Rechazado</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{{ url_for('estudiante.ver_solicitud', id=solicitud.id) }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-file-alt text-muted" style="font-size: 3rem;"></i>
+                                <p class="text-muted mt-2">No tienes solicitudes de pase aún</p>
+                                <a href="{{ url_for('estudiante.solicitar_pase') }}" class="btn btn-primary">
+                                    <i class="fas fa-plus me-2"></i>
+                                    Crear Primera Solicitud
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Pases Activos -->
+                <div class="card card-action mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-qrcode me-2"></i>
+                            Pases Activos
+                        </h5>
+                        
+                        {% if pases_activos %}
+                            {% for pase in pases_activos %}
+                                <div class="border rounded p-3 mb-3">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">{{ pase.vehiculo.placa }}</h6>
+                                            <small class="text-muted">
+                                                {{ pase.fecha_inicio.strftime('%d/%m') }} - {{ pase.fecha_fin.strftime('%d/%m/%Y') }}
+                                            </small>
+                                        </div>
+                                        <span class="badge bg-{{ 'success' if pase.esta_vigente() else 'warning' }}">
+                                            {{ 'Vigente' if pase.esta_vigente() else 'Expirado' }}
+                                        </span>
+                                    </div>
+                                    <div class="mt-2">
+                                        <a href="{{ url_for('estudiante.ver_pase', id=pase.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-qrcode me-1"></i>
+                                            Ver QR
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-3">
+                                <i class="fas fa-qrcode text-muted" style="font-size: 2rem;"></i>
+                                <p class="text-muted mt-2 mb-0">No tienes pases activos</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Ciclo Académico Actual -->
+                <div class="card card-action">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-calendar-alt me-2"></i>
+                            Ciclo Académico
+                        </h5>
+                        
+                        {% if ciclo_actual %}
+                            <div class="text-center">
+                                <h4 class="text-primary">{{ ciclo_actual.nombre }}</h4>
+                                <p class="text-muted">
+                                    {{ ciclo_actual.fecha_inicio.strftime('%d/%m/%Y') }} - 
+                                    {{ ciclo_actual.fecha_fin.strftime('%d/%m/%Y') }}
+                                </p>
+                                <span class="badge bg-success">Activo</span>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-3">
+                                <i class="fas fa-calendar-times text-muted" style="font-size: 2rem;"></i>
+                                <p class="text-muted mt-2 mb-0">No hay ciclo académico activo</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
