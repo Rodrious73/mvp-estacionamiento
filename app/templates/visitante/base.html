@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema QR Universitario - Visitante{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .dashboard-header {
+            background: linear-gradient(135deg, #e74c3c 0%, #f39c12 100%);
+            color: white;
+            padding: 2rem 0;
+        }
+        
+        .stats-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #e74c3c;
+            transition: transform 0.3s ease;
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #e74c3c, #f39c12);
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3);
+        }
+        
+        .alert-custom {
+            border-radius: 10px;
+            border: none;
+        }
+        
+        .card-action {
+            border: none;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .card-action:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+        }
+        
+        .table-responsive {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .visitante-badge {
+            background: linear-gradient(45deg, #e74c3c, #f39c12);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+        }
+        
+        .sidebar {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-link {
+            color: #495057;
+            border-radius: 10px;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link:hover {
+            background: linear-gradient(45deg, #e74c3c, #f39c12);
+            color: white;
+            transform: translateX(5px);
+        }
+        
+        .nav-link.active {
+            background: linear-gradient(45deg, #e74c3c, #f39c12);
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1 class="mb-0">
+                        <i class="fas fa-user-friends me-3"></i>
+                        Dashboard Visitante
+                    </h1>
+                    <p class="mb-0 opacity-75">Bienvenido, {{ user['name'] }}</p>
+                    <span class="visitante-badge mt-2 d-inline-block">
+                        <i class="fas fa-id-badge me-1"></i>
+                        Visitante
+                    </span>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="d-flex gap-2 justify-content-md-end">
+                        <a href="{{ url_for('auth.logout') }}" class="btn btn-light">
+                            <i class="fas fa-sign-out-alt me-2"></i>
+                            Cerrar Sesión
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <!-- Alertas -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-custom alert-dismissible fade show" role="alert">
+                        <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' if category == 'success' else 'info-circle' }} me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 mb-4">
+                <div class="sidebar">
+                    <h5 class="mb-3">
+                        <i class="fas fa-bars me-2"></i>
+                        Menú
+                    </h5>
+                    <nav class="nav flex-column">
+                        <a class="nav-link {% if request.endpoint == 'visitante.dashboard' %}active{% endif %}" 
+                           href="{{ url_for('visitante.dashboard') }}">
+                            <i class="fas fa-tachometer-alt me-2"></i>
+                            Dashboard
+                        </a>
+                        <a class="nav-link {% if request.endpoint == 'visitante.vehiculos' %}active{% endif %}" 
+                           href="{{ url_for('visitante.vehiculos') }}">
+                            <i class="fas fa-car me-2"></i>
+                            Mis Vehículos
+                        </a>
+                        <a class="nav-link {% if request.endpoint == 'visitante.solicitar_pase' %}active{% endif %}" 
+                           href="{{ url_for('visitante.solicitar_pase') }}">
+                            <i class="fas fa-plus-circle me-2"></i>
+                            Solicitar Pase
+                        </a>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="col-md-9">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

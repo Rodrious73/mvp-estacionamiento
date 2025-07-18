@@ -18,18 +18,18 @@
         <div class="col-md-3">
             <label class="form-label">Estado</label>
             <select name="estado" class="form-select">
-                <option value="todas" {% if estado_actual == 'todas' %}selected{% endif %}>Todas</option>
-                <option value="pendiente" {% if estado_actual == 'pendiente' %}selected{% endif %}>Pendiente</option>
-                <option value="aprobada" {% if estado_actual == 'aprobada' %}selected{% endif %}>Aprobada</option>
-                <option value="rechazada" {% if estado_actual == 'rechazada' %}selected{% endif %}>Rechazada</option>
+                <option value="todas" {% if estado_actual=='todas' %}selected{% endif %}>Todas</option>
+                <option value="pendiente" {% if estado_actual=='pendiente' %}selected{% endif %}>Pendiente</option>
+                <option value="aprobada" {% if estado_actual=='aprobada' %}selected{% endif %}>Aprobada</option>
+                <option value="rechazada" {% if estado_actual=='rechazada' %}selected{% endif %}>Rechazada</option>
             </select>
         </div>
         <div class="col-md-3">
             <label class="form-label">Tipo</label>
             <select name="tipo" class="form-select">
-                <option value="todos" {% if tipo_actual == 'todos' %}selected{% endif %}>Todos</option>
-                <option value="ciclo" {% if tipo_actual == 'ciclo' %}selected{% endif %}>Ciclo</option>
-                <option value="temporal" {% if tipo_actual == 'temporal' %}selected{% endif %}>Temporal</option>
+                <option value="todos" {% if tipo_actual=='todos' %}selected{% endif %}>Todos</option>
+                <option value="ciclo" {% if tipo_actual=='ciclo' %}selected{% endif %}>Ciclo</option>
+                <option value="temporal" {% if tipo_actual=='temporal' %}selected{% endif %}>Temporal</option>
             </select>
         </div>
         <div class="col-md-3">
@@ -94,11 +94,13 @@
                     <td>
                         <div>
                             <strong>{{ solicitud.vehiculo.placa }}</strong>
-                            <small class="d-block text-muted">{{ solicitud.vehiculo.marca }} {{ solicitud.vehiculo.modelo }}</small>
+                            <small class="d-block text-muted">{{ solicitud.vehiculo.marca }} {{
+                                solicitud.vehiculo.modelo }}</small>
                         </div>
                     </td>
                     <td>
-                        <span class="badge {% if solicitud.tipo_pase == 'ciclo' %}bg-primary{% else %}bg-info{% endif %}">
+                        <span
+                            class="badge {% if solicitud.tipo_pase == 'ciclo' %}bg-primary{% else %}bg-info{% endif %}">
                             {{ solicitud.tipo_pase|title }}
                         </span>
                     </td>
@@ -116,26 +118,20 @@
                     </td>
                     <td>
                         <div class="btn-group">
-                            <a href="{{ url_for('admin.ver_solicitud', id=solicitud.id) }}" 
-                               class="btn btn-sm btn-outline-primary"
-                               data-bs-toggle="tooltip" 
-                               data-bs-placement="top" 
-                               title="Ver detalles">
+                            <a href="{{ url_for('admin.ver_solicitud', id=solicitud.id) }}"
+                                class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" data-bs-placement="top"
+                                title="Ver detalles">
                                 <i class="fas fa-eye"></i>
                             </a>
                             {% if solicitud.estado == 'pendiente' %}
-                            <button class="btn btn-sm btn-outline-success" 
-                                    onclick="aprobarSolicitud({{ solicitud.id }})"
-                                    data-bs-toggle="tooltip" 
-                                    data-bs-placement="top" 
-                                    title="Aprobar solicitud">
+                            <button class="btn btn-sm btn-outline-success"
+                                onclick="aprobarSolicitud({{ solicitud.id }})" data-bs-toggle="tooltip"
+                                data-bs-placement="top" title="Aprobar solicitud">
                                 <i class="fas fa-check"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-danger" 
-                                    onclick="rechazarSolicitud({{ solicitud.id }})"
-                                    data-bs-toggle="tooltip" 
-                                    data-bs-placement="top" 
-                                    title="Rechazar solicitud">
+                            <button class="btn btn-sm btn-outline-danger"
+                                onclick="rechazarSolicitud({{ solicitud.id }})" data-bs-toggle="tooltip"
+                                data-bs-placement="top" title="Rechazar solicitud">
                                 <i class="fas fa-times"></i>
                             </button>
                             {% endif %}
@@ -153,35 +149,38 @@
         <ul class="pagination justify-content-center">
             {% if solicitudes.has_prev %}
             <li class="page-item">
-                <a class="page-link" href="{{ url_for('admin.solicitudes', page=solicitudes.prev_num, estado=estado_actual, tipo=tipo_actual, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta) }}">
+                <a class="page-link"
+                    href="{{ url_for('admin.solicitudes', page=solicitudes.prev_num, estado=estado_actual, tipo=tipo_actual, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta) }}">
                     <i class="fas fa-chevron-left me-1"></i>Anterior
                 </a>
             </li>
             {% endif %}
-            
+
             {% for page_num in solicitudes.iter_pages() %}
-                {% if page_num %}
-                    {% if page_num != solicitudes.page %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ url_for('admin.solicitudes', page=page_num, estado=estado_actual, tipo=tipo_actual, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta) }}">
-                            {{ page_num }}
-                        </a>
-                    </li>
-                    {% else %}
-                    <li class="page-item active">
-                        <span class="page-link">{{ page_num }}</span>
-                    </li>
-                    {% endif %}
-                {% else %}
-                <li class="page-item disabled">
-                    <span class="page-link">…</span>
-                </li>
-                {% endif %}
+            {% if page_num %}
+            {% if page_num != solicitudes.page %}
+            <li class="page-item">
+                <a class="page-link"
+                    href="{{ url_for('admin.solicitudes', page=page_num, estado=estado_actual, tipo=tipo_actual, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta) }}">
+                    {{ page_num }}
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item active">
+                <span class="page-link">{{ page_num }}</span>
+            </li>
+            {% endif %}
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">…</span>
+            </li>
+            {% endif %}
             {% endfor %}
-            
+
             {% if solicitudes.has_next %}
             <li class="page-item">
-                <a class="page-link" href="{{ url_for('admin.solicitudes', page=solicitudes.next_num, estado=estado_actual, tipo=tipo_actual, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta) }}">
+                <a class="page-link"
+                    href="{{ url_for('admin.solicitudes', page=solicitudes.next_num, estado=estado_actual, tipo=tipo_actual, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta) }}">
                     Siguiente<i class="fas fa-chevron-right ms-1"></i>
                 </a>
             </li>
@@ -189,7 +188,7 @@
         </ul>
     </nav>
     {% endif %}
-    
+
     {% else %}
     <div class="empty-state">
         <i class="fas fa-file-alt"></i>
@@ -204,7 +203,7 @@
 
 <!-- Modal para aprobar solicitud -->
 <div class="modal fade" id="aprobarModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
                 <h5 class="modal-title">
@@ -218,15 +217,76 @@
                         <i class="fas fa-info-circle me-2"></i>
                         ¿Está seguro de que desea aprobar esta solicitud? Se generará automáticamente un pase vehicular.
                     </div>
+
+                    <!-- Información de la solicitud -->
+                    <div id="infoSolicitud" class="mb-3" style="display: none;">
+                        <div class="card bg-light">
+                            <div class="card-body p-3">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <strong>Usuario:</strong> <span id="usuarioNombre"></span><br>
+                                        <strong>Rol:</strong> <span id="usuarioRol"></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>Tipo de pase:</strong> <span id="tipoPase"></span><br>
+                                        <strong>Vehículo:</strong> <span id="vehiculoInfo"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección de selección de estacionamiento para visitantes con pase temporal -->
+                    <div id="estacionamientoSection" class="mb-4" style="display: none;">
+                        <div class="alert alert-info">
+                            <i class="fas fa-parking me-2"></i>
+                            <strong>Reserva de estacionamiento requerida:</strong> Este visitante necesita un espacio
+                            reservado para su visita.
+                        </div>
+
+                        <h6 class="mb-3">
+                            <i class="fas fa-map-marked-alt me-2"></i>Seleccionar Estacionamiento
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">Espacios disponibles</label>
+                                <select name="estacionamiento_id" class="form-select" id="estacionamientoSelect"
+                                    required>
+                                    <option value="">Cargando espacios...</option>
+                                </select>
+                                <small class="form-text text-muted">
+                                    Solo se muestran espacios disponibles para reserva
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Vista previa del espacio</label>
+                                <div id="estacionamientoPreview" class="card card-body bg-light text-center">
+                                    <i class="fas fa-car text-muted mb-2"></i>
+                                    <small class="text-muted">Seleccione un espacio para ver detalles</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                onclick="cargarEstacionamientos()">
+                                <i class="fas fa-sync me-1"></i>Actualizar espacios
+                            </button>
+                            <div id="loadingEstacionamientos" class="spinner-border spinner-border-sm ms-2"
+                                role="status" style="display: none;">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="mb-3">
                         <label class="form-label">Observaciones (opcional)</label>
-                        <textarea name="comentarios_admin" class="form-control" rows="3" 
-                                  placeholder="Comentarios adicionales sobre la aprobación..."></textarea>
+                        <textarea name="comentarios_admin" class="form-control" rows="3"
+                            placeholder="Comentarios adicionales sobre la aprobación..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-success">
+                    <button type="submit" class="btn btn-success" id="btnAprobar">
                         <i class="fas fa-check me-2"></i>Aprobar
                     </button>
                 </div>
@@ -254,7 +314,7 @@
                     <div class="mb-3">
                         <label class="form-label">Motivo del rechazo <span class="text-danger">*</span></label>
                         <textarea name="comentarios_admin" class="form-control" rows="3" required
-                                  placeholder="Explique el motivo del rechazo..."></textarea>
+                            placeholder="Explique el motivo del rechazo..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -272,87 +332,236 @@
 {% block extra_js %}
 {{ super() }}
 <script>
-// Funciones para aprobar y rechazar solicitudes
-function aprobarSolicitud(solicitudId) {
-    const form = document.getElementById('aprobarForm');
-    form.action = `/admin/solicitud/${solicitudId}/aprobar`;
-    const modal = new bootstrap.Modal(document.getElementById('aprobarModal'));
-    modal.show();
-}
+    // Variables globales
+    let solicitudActual = null;
 
-function rechazarSolicitud(solicitudId) {
-    const form = document.getElementById('rechazarForm');
-    form.action = `/admin/solicitud/${solicitudId}/rechazar`;
-    const modal = new bootstrap.Modal(document.getElementById('rechazarModal'));
-    modal.show();
-}
+    // Funciones para aprobar y rechazar solicitudes
+    function aprobarSolicitud(solicitudId) {
+        const form = document.getElementById('aprobarForm');
+        const infoSection = document.getElementById('infoSolicitud');
+        const estacionamientoSection = document.getElementById('estacionamientoSection');
+        const btnAprobar = document.getElementById('btnAprobar');
 
-// Función para actualizar la lista
-function actualizarLista() {
-    window.location.reload();
-}
+        // Reset form
+        form.action = `/admin/solicitud/${solicitudId}/aprobar`;
+        form.reset();
+        infoSection.style.display = 'none';
+        estacionamientoSection.style.display = 'none';
+        btnAprobar.disabled = false;
 
-// Función para mostrar notificaciones
-function mostrarNotificacion(mensaje, tipo = 'info') {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${tipo} alert-dismissible fade show fade-in`;
-    alertDiv.innerHTML = `
+        // Mostrar loading
+        btnAprobar.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Cargando...';
+        btnAprobar.disabled = true;
+
+        // Obtener información de la solicitud
+        fetch(`/admin/api/solicitud/${solicitudId}/info`)
+            .then(response => response.json())
+            .then(data => {
+                console.log('Solicitud data:', data);
+                if (data.success) {
+                    solicitudActual = data.solicitud;
+
+                    // Mostrar información de la solicitud
+                    document.getElementById('usuarioNombre').textContent = solicitudActual.usuario.nombre;
+                    document.getElementById('usuarioRol').textContent = solicitudActual.usuario.rol.charAt(0).toUpperCase() + solicitudActual.usuario.rol.slice(1);
+                    document.getElementById('tipoPase').textContent = solicitudActual.tipo_pase.charAt(0).toUpperCase() + solicitudActual.tipo_pase.slice(1);
+                    document.getElementById('vehiculoInfo').textContent = `${solicitudActual.vehiculo.placa} (${solicitudActual.vehiculo.marca} ${solicitudActual.vehiculo.modelo})`;
+                    infoSection.style.display = 'block';
+
+                    // Solo mostrar selección de estacionamiento si es visitante CON pase temporal
+                    const esVisitante = solicitudActual.usuario.rol === 'visita';
+                    const esTemporal = solicitudActual.tipo_pase === 'temporal';
+
+                    if (esVisitante && esTemporal) {
+                        estacionamientoSection.style.display = 'block';
+                        cargarEstacionamientos();
+                    } else {
+                        estacionamientoSection.style.display = 'none';
+                        // Para no visitantes o pases de ciclo, no se requiere estacionamiento
+                        btnAprobar.innerHTML = '<i class="fas fa-check me-2"></i>Aprobar';
+                        btnAprobar.disabled = false;
+                    }
+
+                    // Actualizar texto del botón según el tipo
+                    if (esVisitante && esTemporal) {
+                        btnAprobar.innerHTML = '<i class="fas fa-check me-2"></i>Aprobar y Reservar';
+                    } else {
+                        btnAprobar.innerHTML = '<i class="fas fa-check me-2"></i>Aprobar';
+                        btnAprobar.disabled = false;
+                    }
+
+                    const modal = new bootstrap.Modal(document.getElementById('aprobarModal'));
+                    modal.show();
+                } else {
+                    mostrarNotificacion('Error al cargar la información de la solicitud: ' + data.message, 'error');
+                    btnAprobar.innerHTML = '<i class="fas fa-check me-2"></i>Aprobar';
+                    btnAprobar.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error al obtener información de la solicitud:', error);
+                mostrarNotificacion('Error al cargar la información de la solicitud', 'error');
+                btnAprobar.innerHTML = '<i class="fas fa-check me-2"></i>Aprobar';
+                btnAprobar.disabled = false;
+            });
+    }
+
+    function rechazarSolicitud(solicitudId) {
+        const form = document.getElementById('rechazarForm');
+        form.action = `/admin/solicitud/${solicitudId}/rechazar`;
+        const modal = new bootstrap.Modal(document.getElementById('rechazarModal'));
+        modal.show();
+    }
+
+    function cargarEstacionamientos() {
+        const select = document.getElementById('estacionamientoSelect');
+        const preview = document.getElementById('estacionamientoPreview');
+        const loading = document.getElementById('loadingEstacionamientos');
+        const btnAprobar = document.getElementById('btnAprobar');
+
+        // Mostrar loading
+        select.innerHTML = '<option value="">Cargando espacios...</option>';
+        select.disabled = true;
+        loading.style.display = 'inline-block';
+        btnAprobar.disabled = true;
+
+        fetch('/admin/api/estacionamientos/disponibles')
+            .then(response => response.json())
+            .then(data => {
+                select.innerHTML = '<option value="">Seleccionar espacio...</option>';
+
+                if (data.success && data.estacionamientos.length > 0) {
+                    data.estacionamientos.forEach(est => {
+                        const option = document.createElement('option');
+                        option.value = est.id;
+                        option.textContent = `Espacio ${est.numero} - ${est.ubicacion}`;
+                        option.dataset.estacionamiento = JSON.stringify(est);
+                        select.appendChild(option);
+                    });
+
+                    // Event listener para actualizar preview
+                    select.addEventListener('change', function () {
+                        const selectedOption = this.options[this.selectedIndex];
+                        if (selectedOption.value && selectedOption.dataset.estacionamiento) {
+                            const est = JSON.parse(selectedOption.dataset.estacionamiento);
+                            preview.innerHTML = `
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="text-start">
+                                    <h6 class="mb-1">Espacio ${est.numero}</h6>
+                                    <small class="text-muted">${est.ubicacion}</small>
+                                    ${est.tipo ? `<br><small class="badge bg-info">${est.tipo}</small>` : ''}
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check me-1"></i>Disponible
+                                    </span>
+                                </div>
+                            </div>
+                        `;
+                            btnAprobar.disabled = false;
+                        } else {
+                            preview.innerHTML = `
+                            <i class="fas fa-car text-muted mb-2"></i>
+                            <small class="text-muted">Seleccione un espacio para ver detalles</small>
+                        `;
+                            btnAprobar.disabled = true;
+                        }
+                    });
+
+                    select.disabled = false;
+                    btnAprobar.disabled = true; // Mantener deshabilitado hasta seleccionar
+
+                } else {
+                    select.innerHTML = '<option value="">No hay espacios disponibles</option>';
+                    preview.innerHTML = `
+                    <div class="text-warning">
+                        <i class="fas fa-exclamation-triangle mb-2"></i>
+                        <br><small>No hay espacios disponibles actualmente</small>
+                    </div>
+                `;
+                    btnAprobar.disabled = true;
+                    mostrarNotificacion('No hay espacios de estacionamiento disponibles', 'warning');
+                }
+
+            })
+            .catch(error => {
+                console.error('Error al cargar estacionamientos:', error);
+                select.innerHTML = '<option value="">Error al cargar espacios</option>';
+                select.disabled = false;
+                btnAprobar.disabled = true;
+                mostrarNotificacion('Error al cargar los espacios de estacionamiento', 'error');
+            })
+            .finally(() => {
+                loading.style.display = 'none';
+            });
+    }
+
+    // Función para actualizar la lista
+    function actualizarLista() {
+        window.location.reload();
+    }
+
+    // Función para mostrar notificaciones
+    function mostrarNotificacion(mensaje, tipo = 'info') {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${tipo} alert-dismissible fade show fade-in`;
+        alertDiv.innerHTML = `
         <i class="fas fa-${tipo === 'success' ? 'check-circle' : tipo === 'danger' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
         ${mensaje}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
-    
-    const container = document.querySelector('.container');
-    container.insertBefore(alertDiv, container.firstChild);
-    
-    // Auto-hide después de 5 segundos
-    setTimeout(() => {
-        const alert = new bootstrap.Alert(alertDiv);
-        alert.close();
-    }, 5000);
-}
 
-// Event listeners
-document.addEventListener('DOMContentLoaded', function() {
-    // Validación del formulario de rechazo
-    document.getElementById('rechazarForm').addEventListener('submit', function(e) {
-        const comentarios = document.querySelector('textarea[name="comentarios_admin"]').value.trim();
-        if (!comentarios) {
+        const container = document.querySelector('.container');
+        container.insertBefore(alertDiv, container.firstChild);
+
+        // Auto-hide después de 5 segundos
+        setTimeout(() => {
+            const alert = new bootstrap.Alert(alertDiv);
+            alert.close();
+        }, 5000);
+    }
+
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function () {
+        // Validación del formulario de rechazo
+        document.getElementById('rechazarForm').addEventListener('submit', function (e) {
+            const comentarios = document.querySelector('textarea[name="comentarios_admin"]').value.trim();
+            if (!comentarios) {
+                e.preventDefault();
+                mostrarNotificacion('Debe proporcionar un motivo para rechazar la solicitud', 'warning');
+                return false;
+            }
+        });
+
+        // Actualizar automáticamente cada 2 minutos
+        setInterval(function () {
+            if (window.location.href.includes('admin/solicitudes') && !document.querySelector('.modal.show')) {
+                // Solo actualizar si no hay modales abiertos
+                fetch(window.location.href)
+                    .then(response => response.text())
+                    .then(html => {
+                        // Solo actualizar el contador si hay cambios
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const newBadge = doc.querySelector('.badge-admin');
+                        const currentBadge = document.querySelector('.badge-admin');
+
+                        if (newBadge && currentBadge && newBadge.textContent !== currentBadge.textContent) {
+                            mostrarNotificacion('Hay nuevas solicitudes disponibles', 'info');
+                        }
+                    })
+                    .catch(error => console.error('Error al actualizar:', error));
+            }
+        }, 120000); // 2 minutos
+    });
+
+    // Confirmación antes de aprobar/rechazar
+    window.addEventListener('beforeunload', function (e) {
+        const modal = document.querySelector('.modal.show');
+        if (modal && (modal.id === 'aprobarModal' || modal.id === 'rechazarModal')) {
             e.preventDefault();
-            mostrarNotificacion('Debe proporcionar un motivo para rechazar la solicitud', 'warning');
-            return false;
+            e.returnValue = '';
         }
     });
-    
-    // Actualizar automáticamente cada 2 minutos
-    setInterval(function() {
-        if (window.location.href.includes('admin/solicitudes') && !document.querySelector('.modal.show')) {
-            // Solo actualizar si no hay modales abiertos
-            fetch(window.location.href)
-                .then(response => response.text())
-                .then(html => {
-                    // Solo actualizar el contador si hay cambios
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-                    const newBadge = doc.querySelector('.badge-admin');
-                    const currentBadge = document.querySelector('.badge-admin');
-                    
-                    if (newBadge && currentBadge && newBadge.textContent !== currentBadge.textContent) {
-                        mostrarNotificacion('Hay nuevas solicitudes disponibles', 'info');
-                    }
-                })
-                .catch(error => console.error('Error al actualizar:', error));
-        }
-    }, 120000); // 2 minutos
-});
-
-// Confirmación antes de aprobar/rechazar
-window.addEventListener('beforeunload', function(e) {
-    const modal = document.querySelector('.modal.show');
-    if (modal && (modal.id === 'aprobarModal' || modal.id === 'rechazarModal')) {
-        e.preventDefault();
-        e.returnValue = '';
-    }
-});
 </script>
 {% endblock %}

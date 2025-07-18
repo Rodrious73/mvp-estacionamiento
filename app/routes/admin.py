@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from app import db
+from app.models.estacionamiento import Estacionamiento
 from app.models.usuario import Usuario
 from app.models.usuario_seguridad import UsuarioSeguridad
 from app.models.vehiculo import Vehiculo
@@ -122,6 +123,7 @@ def aprobar_solicitud(id):
         return redirect(url_for('admin.ver_solicitud', id=id))
     
     comentarios = request.form.get('comentarios_admin', '')
+    estacionamiento_id = request.form.get('estacionamiento_id')
     
     try:
         # Aprobar la solicitud
@@ -139,9 +141,20 @@ def aprobar_solicitud(id):
             fecha_fin = ciclo.fecha_fin
             ciclo_id = ciclo.id
         else:
-            # Para pases temporales, usar fechas específicas (30 días)
-            fecha_inicio = datetime.now().date()
-            fecha_fin = fecha_inicio + timedelta(days=30)
+            # Para pases temporales, usar fechas específicas
+            if solicitud.usuario.rol == 'visita':
+                # Para visitantes, usar fechas de la solicitud si están disponibles
+                if hasattr(solicitud, 'fecha_reservacion_inicio') and solicitud.fecha_reservacion_inicio:
+                    fecha_inicio = solicitud.fecha_reservacion_inicio
+                    fecha_fin = solicitud.fecha_reservacion_fin
+                else:
+                    # Si no hay fechas específicas, usar fechas por defecto
+                    fecha_inicio = datetime.now().date()
+                    fecha_fin = fecha_inicio + timedelta(days=1)
+            else:
+                # Para otros usuarios temporales, usar 30 días
+                fecha_inicio = datetime.now().date()
+                fecha_fin = fecha_inicio + timedelta(days=30)
             ciclo_id = None
         
         pase = PaseVehicular(
@@ -154,9 +167,34 @@ def aprobar_solicitud(id):
         )
         
         db.session.add(pase)
-        db.session.commit()
+        db.session.flush()  # Para obtener el ID del pase
         
-        flash('Solicitud aprobada exitosamente', 'success')
+        # Si es un visitante con pase temporal y se seleccionó un estacionamiento, reservarlo
+        if (solicitud.usuario.rol == 'visita' and 
+            solicitud.tipo_pase == 'temporal' and 
+            estacionamiento_id):
+            
+            estacionamiento = Estacionamiento.query.get(estacionamiento_id)
+            if estacionamiento and estacionamiento.estado == 'disponible':
+                # Reservar el estacionamiento
+                estacionamiento.estado = 'reservado'
+                estacionamiento.pase_id = pase.id
+                estacionamiento.fecha_asignacion = datetime.now()
+                estacionamiento.observaciones = f'Reservado para visitante {solicitud.usuario.nombre} - Pase #{pase.id}'
+                
+                flash(f'Solicitud aprobada y espacio {estacionamiento.numero} reservado exitosamente', 'success')
+            else:
+                flash('Solicitud aprobada pero el estacionamiento seleccionado ya no está disponible', 'warning')
+        elif (solicitud.usuario.rol == 'visita' and 
+              solicitud.tipo_pase == 'temporal' and 
+              not estacionamiento_id):
+            # Si es visitante temporal pero no se seleccionó estacionamiento
+            flash('Solicitud aprobada pero no se reservó ningún estacionamiento', 'warning')
+        else:
+            # Para otros casos (no visitantes o pases de ciclo)
+            flash('Solicitud aprobada exitosamente', 'success')
+        
+        db.session.commit()
         
     except Exception as e:
         db.session.rollback()
@@ -934,3 +972,64 @@ def historial_pase(id):
     # Por ahora, redirigimos de vuelta a la lista de pases
     flash('Funcionalidad de historial en desarrollo', 'info')
     return redirect(url_for('admin.pases'))
+
+@admin_bp.route('/api/solicitud/<int:solicitud_id>/info')
+@login_required
+@admin_required
+def api_solicitud_info(solicitud_id):
+    """API para obtener información de una solicitud"""
+    try:
+        solicitud = SolicitudPase.query.get_or_404(solicitud_id)
+        
+        data = {
+            'id': solicitud.id,
+            'usuario': {
+                'id': solicitud.usuario.id,
+                'nombre': solicitud.usuario.nombre,
+                'rol': solicitud.usuario.rol
+            },
+            'vehiculo': {
+                'id': solicitud.vehiculo.id,
+                'placa': solicitud.vehiculo.placa,
+                'marca': solicitud.vehiculo.marca,
+                'modelo': solicitud.vehiculo.modelo
+            },
+            'tipo_pase': solicitud.tipo_pase,
+            'estado': solicitud.estado,
+            'fecha_solicitud': solicitud.fecha_solicitud.strftime('%Y-%m-%d %H:%M:%S')
+        }
+        
+        return jsonify({'success': True, 'solicitud': data})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@admin_bp.route('/api/estacionamientos/disponibles')
+@login_required
+@admin_required
+def api_estacionamientos_disponibles():
+    """API para obtener estacionamientos disponibles"""
+    try:
+        # Primero necesitas importar el modelo Estacionamiento
+        from app.models.estacionamiento import Estacionamiento
+        
+        estacionamientos = Estacionamiento.query.filter_by(estado='disponible').all()
+        
+        data = []
+        for est in estacionamientos:
+            data.append({
+                'id': est.id,
+                'numero': est.numero,
+                'ubicacion': est.ubicacion,
+                'estado': est.estado,
+                'tipo': getattr(est, 'tipo', 'general')  # Usar getattr por si el atributo no existe
+            })
+        
+        return jsonify({
+            'success': True, 
+            'estacionamientos': data,
+            'total': len(data)
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})

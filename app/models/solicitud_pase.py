@@ -13,6 +13,8 @@ class SolicitudPase(db.Model):
     estado = db.Column(db.String(20), default='pendiente')  # 'pendiente', 'aprobado', 'rechazado', 'cancelado'
     comentarios_admin = db.Column(db.String(255))
     fecha_revision = db.Column(db.DateTime)
+    fecha_reservacion_inicio = db.Column(db.Date, nullable=True)
+    fecha_reservacion_fin = db.Column(db.Date, nullable=True)
     
     # Relaciones
     usuario = db.relationship('Usuario', back_populates='solicitudes_pases')
@@ -52,5 +54,7 @@ class SolicitudPase(db.Model):
             'fecha_solicitud': self.fecha_solicitud.isoformat() if self.fecha_solicitud else None,
             'estado': self.estado,
             'comentarios_admin': self.comentarios_admin,
+            'fecha_reservacion_inicio': self.fecha_reservacion_inicio.isoformat() if self.fecha_reservacion_inicio else None,
+            'fecha_reservacion_fin': self.fecha_reservacion_fin.isoformat() if self.fecha_reservacion_fin else None,
             'fecha_revision': self.fecha_revision.isoformat() if self.fecha_revision else None
         }

@@ -1,0 +1,247 @@
+{% extends "visitante/base.html" %}
+
+{% block title %}Dashboard Visitante - Sistema QR Universitario{% endblock %}
+
+{% block content %}
+<!-- Información del Usuario -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-user-friends text-danger me-3" style="font-size: 2rem;"></i>
+                <div>
+                    <h6 class="mb-0">Tipo de Usuario</h6>
+                    <strong>Visitante</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-id-card text-primary me-3" style="font-size: 2rem;"></i>
+                <div>
+                    <h6 class="mb-0">DNI</h6>
+                    <strong>{{ user['dni'] }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-car text-warning me-3" style="font-size: 2rem;"></i>
+                <div>
+                    <h6 class="mb-0">Vehículos</h6>
+                    <strong>{{ vehiculos|length }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estadísticas -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card card-action">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title text-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            Pases Activos
+                        </h5>
+                        <h2 class="mb-0 text-success">{{ pases_activos|length }}</h2>
+                        <p class="text-muted mb-0">Pases vigentes</p>
+                    </div>
+                    <i class="fas fa-id-badge text-success" style="font-size: 3rem; opacity: 0.3;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card card-action">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title text-info">
+                            <i class="fas fa-clock me-2"></i>
+                            Solicitudes
+                        </h5>
+                        <h2 class="mb-0 text-info">{{ solicitudes|length }}</h2>
+                        <p class="text-muted mb-0">Total de solicitudes</p>
+                    </div>
+                    <i class="fas fa-clipboard-list text-info" style="font-size: 3rem; opacity: 0.3;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Acciones Rápidas -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card card-action">
+            <div class="card-header bg-transparent">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-bolt me-2"></i>
+                    Acciones Rápidas
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if vehiculos|length > 0 %}
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('visitante.solicitar_pase') }}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-plus-circle me-2"></i>
+                            Solicitar Pase Temporal
+                        </a>
+                        <a href="{{ url_for('visitante.vehiculos') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-car me-2"></i>
+                            Gestionar Vehículos
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning alert-custom">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Acción requerida:</strong> Debes registrar al menos un vehículo antes de poder solicitar pases.
+                    </div>
+                    <div class="d-grid">
+                        <a href="{{ url_for('visitante.vehiculos') }}" class="btn btn-warning btn-lg">
+                            <i class="fas fa-plus-circle me-2"></i>
+                            Registrar Primer Vehículo
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card card-action">
+            <div class="card-header bg-transparent">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-qrcode me-2"></i>
+                    Pases Activos
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if pases_activos %}
+                    <div class="list-group list-group-flush">
+                        {% for pase in pases_activos %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ pase.vehiculo.placa }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        {{ pase.vehiculo.marca }} {{ pase.vehiculo.modelo }}
+                                    </small>
+                                    <br>
+                                    <small class="text-success">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        {{ pase.fecha_inicio.strftime('%d/%m/%Y') }} - {{ pase.fecha_fin.strftime('%d/%m/%Y') }}
+                                    </small>
+                                </div>
+                                <a href="{{ url_for('visitante.ver_pase', pase_id=pase.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-qrcode me-1"></i>
+                                    Ver QR
+                                </a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted">
+                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                        <p>No tienes pases activos</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Solicitudes Recientes -->
+<div class="row">
+    <div class="col-12">
+        <div class="card card-action">
+            <div class="card-header bg-transparent">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-history me-2"></i>
+                    Solicitudes Recientes
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if solicitudes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Vehículo</th>
+                                    <th>Tipo</th>
+                                    <th>Fecha Solicitud</th>
+                                    <th>Periodo</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for solicitud in solicitudes %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ solicitud.vehiculo.placa }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ solicitud.vehiculo.marca }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">{{ solicitud.tipo_pase.title() }}</span>
+                                        </td>
+                                        <td>{{ solicitud.fecha_solicitud.strftime('%d/%m/%Y') }}</td>
+                                        <td>
+                                            {% if solicitud.fecha_reservacion_inicio and solicitud.fecha_reservacion_fin %}
+                                                <small>
+                                                    {{ solicitud.fecha_reservacion_inicio.strftime('%d/%m/%Y') }} - 
+                                                    {{ solicitud.fecha_reservacion_fin.strftime('%d/%m/%Y') }}
+                                                </small>
+                                            {% else %}
+                                                <small class="text-muted">No especificado</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if solicitud.estado == 'pendiente' %}
+                                                <span class="badge bg-warning">Pendiente</span>
+                                            {% elif solicitud.estado == 'aprobado' %}
+                                                <span class="badge bg-success">Aprobado</span>
+                                            {% elif solicitud.estado == 'rechazado' %}
+                                                <span class="badge bg-danger">Rechazado</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ solicitud.estado.title() }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('visitante.ver_solicitud', solicitud_id=solicitud.id) }}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye me-1"></i>
+                                                Ver
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted">
+                        <i class="fas fa-clipboard-list fa-3x mb-3"></i>
+                        <p>No has realizado solicitudes aún</p>
+                        {% if vehiculos|length > 0 %}
+                            <a href="{{ url_for('visitante.solicitar_pase') }}" class="btn btn-primary">
+                                <i class="fas fa-plus-circle me-2"></i>
+                                Crear Primera Solicitud
+                            </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

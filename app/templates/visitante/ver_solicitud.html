@@ -1,0 +1,272 @@
+{% extends "visitante/base.html" %}
+
+{% block title %}Ver Solicitud - Sistema QR Universitario{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card card-action">
+            <div class="card-header bg-transparent">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clipboard-list me-2"></i>
+                    Detalles de la Solicitud #{{ solicitud.id }}
+                </h5>
+                <p class="text-muted mb-0">Estado y seguimiento de tu solicitud</p>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card border-start border-info border-3">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Información de la Solicitud
+                                </h6>
+                                <table class="table table-sm table-borderless">
+                                    <tr>
+                                        <td class="text-muted"><strong>ID:</strong></td>
+                                        <td><code>#{{ solicitud.id }}</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted"><strong>Tipo de Pase:</strong></td>
+                                        <td>
+                                            <span class="badge bg-info">{{ solicitud.tipo_pase.title() }}</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted"><strong>Estado:</strong></td>
+                                        <td>
+                                            {% if solicitud.estado == 'pendiente' %}
+                                                <span class="badge bg-warning">
+                                                    <i class="fas fa-clock me-1"></i>
+                                                    Pendiente
+                                                </span>
+                                            {% elif solicitud.estado == 'aprobado' %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check-circle me-1"></i>
+                                                    Aprobado
+                                                </span>
+                                            {% elif solicitud.estado == 'rechazado' %}
+                                                <span class="badge bg-danger">
+                                                    <i class="fas fa-times-circle me-1"></i>
+                                                    Rechazado
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ solicitud.estado.title() }}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted"><strong>Fecha Solicitud:</strong></td>
+                                        <td>
+                                            <i class="fas fa-calendar-alt me-1"></i>
+                                            {{ solicitud.fecha_solicitud.strftime('%d/%m/%Y %H:%M') }}
+                                        </td>
+                                    </tr>
+                                    {% if solicitud.fecha_revision %}
+                                    <tr>
+                                        <td class="text-muted"><strong>Fecha Revisión:</strong></td>
+                                        <td>
+                                            <i class="fas fa-calendar-check me-1"></i>
+                                            {{ solicitud.fecha_revision.strftime('%d/%m/%Y %H:%M') }}
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if solicitud.fecha_reservacion_inicio %}
+                                    <tr>
+                                        <td class="text-muted"><strong>Fecha Inicio:</strong></td>
+                                        <td>
+                                            <i class="fas fa-play me-1"></i>
+                                            {{ solicitud.fecha_reservacion_inicio.strftime('%d/%m/%Y') }}
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if solicitud.fecha_reservacion_fin %}
+                                    <tr>
+                                        <td class="text-muted"><strong>Fecha Fin:</strong></td>
+                                        <td>
+                                            <i class="fas fa-stop me-1"></i>
+                                            {{ solicitud.fecha_reservacion_fin.strftime('%d/%m/%Y') }}
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="card border-start border-primary border-3 mt-3">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-car me-2"></i>
+                                    Información del Vehículo
+                                </h6>
+                                <table class="table table-sm table-borderless">
+                                    <tr>
+                                        <td class="text-muted"><strong>Placa:</strong></td>
+                                        <td><strong>{{ solicitud.vehiculo.placa }}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted"><strong>Marca:</strong></td>
+                                        <td>{{ solicitud.vehiculo.marca }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted"><strong>Modelo:</strong></td>
+                                        <td>{{ solicitud.vehiculo.modelo }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted"><strong>Color:</strong></td>
+                                        <td>{{ solicitud.vehiculo.color }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card border-start border-success border-3">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-route me-2"></i>
+                                    Estado de la Solicitud
+                                </h6>
+                                <div class="timeline">
+                                    <div class="timeline-item">
+                                        <div class="timeline-marker bg-primary"></div>
+                                        <div class="timeline-content">
+                                            <h6 class="timeline-title">Solicitud Enviada</h6>
+                                            <p class="timeline-text">{{ solicitud.fecha_solicitud.strftime('%d/%m/%Y %H:%M') }}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    {% if solicitud.estado != 'pendiente' %}
+                                    <div class="timeline-item">
+                                        <div class="timeline-marker {% if solicitud.estado == 'aprobado' %}bg-success{% else %}bg-danger{% endif %}"></div>
+                                        <div class="timeline-content">
+                                            <h6 class="timeline-title">
+                                                {% if solicitud.estado == 'aprobado' %}
+                                                    <i class="fas fa-check-circle me-1"></i>
+                                                    Solicitud Aprobada
+                                                {% else %}
+                                                    <i class="fas fa-times-circle me-1"></i>
+                                                    Solicitud Rechazada
+                                                {% endif %}
+                                            </h6>
+                                            <p class="timeline-text">{{ solicitud.fecha_revision.strftime('%d/%m/%Y %H:%M') if solicitud.fecha_revision else 'Fecha no disponible' }}</p>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if solicitud.estado == 'aprobado' and solicitud.pase_vehicular %}
+                                    <div class="timeline-item">
+                                        <div class="timeline-marker bg-info"></div>
+                                        <div class="timeline-content">
+                                            <h6 class="timeline-title">
+                                                <i class="fas fa-qrcode me-1"></i>
+                                                Pase Generado
+                                            </h6>
+                                            <p class="timeline-text">El pase está disponible para su uso</p>
+                                            <a href="{{ url_for('visitante.ver_pase', pase_id=solicitud.pase_vehicular.id) }}" 
+                                               class="btn btn-sm btn-primary">
+                                                <i class="fas fa-qrcode me-1"></i>
+                                                Ver Pase
+                                            </a>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if solicitud.comentarios_admin %}
+                        <div class="card border-start border-warning border-3 mt-3">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-comment me-2"></i>
+                                    Comentarios del Administrador
+                                </h6>
+                                <div class="alert alert-info alert-custom">
+                                    <i class="fas fa-user-tie me-2"></i>
+                                    {{ solicitud.comentarios_admin }}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mt-4 text-center">
+                    <a href="{{ url_for('visitante.dashboard') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Volver al Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 30px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -35px;
+    top: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 3px #dee2e6;
+}
+
+.timeline-item:before {
+    content: '';
+    position: absolute;
+    left: -30px;
+    top: 12px;
+    width: 2px;
+    height: calc(100% + 18px);
+    background-color: #dee2e6;
+}
+
+.timeline-item:last-child:before {
+    display: none;
+}
+
+.timeline-content {
+    padding-left: 10px;
+}
+
+.timeline-title {
+    margin-bottom: 5px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.timeline-text {
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.card-action {
+    transition: all 0.3s ease;
+}
+
+.card-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+</style>
+{% endblock %}

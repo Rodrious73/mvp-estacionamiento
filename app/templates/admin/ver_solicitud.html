@@ -31,7 +31,8 @@
                     <div class="mb-3">
                         <label class="form-label fw-bold">Tipo de Pase</label>
                         <div class="form-control-plaintext">
-                            <span class="badge {% if solicitud.tipo_pase == 'ciclo' %}bg-primary{% else %}bg-info{% endif %}">
+                            <span
+                                class="badge {% if solicitud.tipo_pase == 'ciclo' %}bg-primary{% else %}bg-info{% endif %}">
                                 {{ solicitud.tipo_pase|title }}
                             </span>
                         </div>
@@ -55,8 +56,8 @@
                         <div class="form-control-plaintext">
                             {{ solicitud.ciclo.nombre }}
                             <small class="text-muted">
-                                ({{ solicitud.ciclo.fecha_inicio.strftime('%d/%m/%Y') }} - 
-                                 {{ solicitud.ciclo.fecha_fin.strftime('%d/%m/%Y') }})
+                                ({{ solicitud.ciclo.fecha_inicio.strftime('%d/%m/%Y') }} -
+                                {{ solicitud.ciclo.fecha_fin.strftime('%d/%m/%Y') }})
                             </small>
                         </div>
                     </div>
@@ -101,7 +102,8 @@
                     <div class="mb-3">
                         <label class="form-label fw-bold">Rol</label>
                         <div class="form-control-plaintext">
-                            <span class="badge {% if solicitud.usuario.rol == 'estudiante' %}bg-primary{% else %}bg-success{% endif %}">
+                            <span
+                                class="badge {% if solicitud.usuario.rol == 'estudiante' %}bg-primary{% else %}bg-success{% endif %}">
                                 {{ solicitud.usuario.rol|title }}
                             </span>
                         </div>
@@ -216,7 +218,7 @@
             <h4 class="mb-3">
                 <i class="fas fa-cogs me-2"></i>Acciones
             </h4>
-            
+
             {% if solicitud.estado == 'pendiente' %}
             <div class="d-grid gap-2">
                 <button class="btn btn-success" onclick="aprobarSolicitud({{ solicitud.id }})">
@@ -232,7 +234,8 @@
                 Solicitud aprobada
                 {% if solicitud.pase_vehicular %}
                 <hr>
-                <a href="{{ url_for('admin.ver_pase', id=solicitud.pase_vehicular.id) }}" class="btn btn-sm btn-success">
+                <a href="{{ url_for('admin.ver_pase', id=solicitud.pase_vehicular.id) }}"
+                    class="btn btn-sm btn-success">
                     Ver Pase Generado
                 </a>
                 {% endif %}
@@ -258,7 +261,7 @@
                         <p class="timeline-date">{{ solicitud.fecha_solicitud.strftime('%d/%m/%Y %H:%M') }}</p>
                     </div>
                 </div>
-                
+
                 {% if solicitud.estado != 'pendiente' and solicitud.fecha_revision %}
                 <div class="timeline-item">
                     <div class="timeline-marker 
@@ -277,7 +280,8 @@
                     <div class="timeline-marker timeline-marker-info"></div>
                     <div class="timeline-content">
                         <h6 class="timeline-title">Pase generado</h6>
-                        <p class="timeline-date">{{ solicitud.pase_vehicular.fecha_emision.strftime('%d/%m/%Y %H:%M') }}</p>
+                        <p class="timeline-date">{{ solicitud.pase_vehicular.fecha_emision.strftime('%d/%m/%Y %H:%M') }}
+                        </p>
                     </div>
                 </div>
                 {% endif %}
@@ -291,20 +295,20 @@
             </h4>
             <div class="info-list">
                 <div class="info-item">
-                    <strong>Tipo de solicitud:</strong> 
+                    <strong>Tipo de solicitud:</strong>
                     <span class="info-value">{{ solicitud.tipo_pase|title }}</span>
                 </div>
                 <div class="info-item">
-                    <strong>Tipo de usuario:</strong> 
+                    <strong>Tipo de usuario:</strong>
                     <span class="info-value">{{ solicitud.usuario.rol|title }}</span>
                 </div>
                 <div class="info-item">
-                    <strong>Tipo de vehículo:</strong> 
+                    <strong>Tipo de vehículo:</strong>
                     <span class="info-value">{{ solicitud.vehiculo.tipo }}</span>
                 </div>
                 {% if solicitud.ciclo %}
                 <div class="info-item">
-                    <strong>Ciclo académico:</strong> 
+                    <strong>Ciclo académico:</strong>
                     <span class="info-value">{{ solicitud.ciclo.nombre }}</span>
                 </div>
                 {% endif %}
@@ -315,11 +319,11 @@
 
 <!-- Modal para aprobar solicitud -->
 <div class="modal fade" id="aprobarModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
                 <h5 class="modal-title">
-                    <i class="fas fa-check me-2"></i>Aprobar Solicitud #{{ solicitud.id }}
+                    <i class="fas fa-check me-2"></i>Aprobar Solicitud
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -329,15 +333,76 @@
                         <i class="fas fa-info-circle me-2"></i>
                         ¿Está seguro de que desea aprobar esta solicitud? Se generará automáticamente un pase vehicular.
                     </div>
+
+                    <!-- Información de la solicitud -->
+                    <div id="infoSolicitud" class="mb-3" style="display: none;">
+                        <div class="card bg-light">
+                            <div class="card-body p-3">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <strong>Usuario:</strong> <span id="usuarioNombre"></span><br>
+                                        <strong>Rol:</strong> <span id="usuarioRol"></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>Tipo de pase:</strong> <span id="tipoPase"></span><br>
+                                        <strong>Vehículo:</strong> <span id="vehiculoInfo"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección de selección de estacionamiento para visitantes con pase temporal -->
+                    <div id="estacionamientoSection" class="mb-4" style="display: none;">
+                        <div class="alert alert-info">
+                            <i class="fas fa-parking me-2"></i>
+                            <strong>Reserva de estacionamiento requerida:</strong> Este visitante necesita un espacio
+                            reservado para su visita.
+                        </div>
+
+                        <h6 class="mb-3">
+                            <i class="fas fa-map-marked-alt me-2"></i>Seleccionar Estacionamiento
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">Espacios disponibles</label>
+                                <select name="estacionamiento_id" class="form-select" id="estacionamientoSelect"
+                                    required>
+                                    <option value="">Cargando espacios...</option>
+                                </select>
+                                <small class="form-text text-muted">
+                                    Solo se muestran espacios disponibles para reserva
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Vista previa del espacio</label>
+                                <div id="estacionamientoPreview" class="card card-body bg-light text-center">
+                                    <i class="fas fa-car text-muted mb-2"></i>
+                                    <small class="text-muted">Seleccione un espacio para ver detalles</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                onclick="cargarEstacionamientos()">
+                                <i class="fas fa-sync me-1"></i>Actualizar espacios
+                            </button>
+                            <div id="loadingEstacionamientos" class="spinner-border spinner-border-sm ms-2"
+                                role="status" style="display: none;">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="mb-3">
                         <label class="form-label">Observaciones (opcional)</label>
-                        <textarea name="comentarios_admin" class="form-control" rows="3" 
-                                  placeholder="Comentarios adicionales sobre la aprobación..."></textarea>
+                        <textarea name="comentarios_admin" class="form-control" rows="3"
+                            placeholder="Comentarios adicionales sobre la aprobación..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-success">
+                    <button type="submit" class="btn btn-success" id="btnAprobar">
                         <i class="fas fa-check me-2"></i>Aprobar
                     </button>
                 </div>
@@ -365,7 +430,7 @@
                     <div class="mb-3">
                         <label class="form-label">Motivo del rechazo <span class="text-danger">*</span></label>
                         <textarea name="comentarios_admin" class="form-control" rows="3" required
-                                  placeholder="Explique el motivo del rechazo..."></textarea>
+                            placeholder="Explique el motivo del rechazo..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -389,7 +454,7 @@
         padding-left: 2rem;
         margin-top: 1rem;
     }
-    
+
     .custom-timeline::before {
         content: '';
         position: absolute;
@@ -399,18 +464,18 @@
         width: 2px;
         background: linear-gradient(to bottom, #e9ecef 0%, #dee2e6 100%);
     }
-    
+
     .timeline-item {
         position: relative;
         padding-bottom: 1.5rem;
         margin-bottom: 1rem;
     }
-    
+
     .timeline-item:last-child {
         padding-bottom: 0;
         margin-bottom: 0;
     }
-    
+
     .timeline-marker {
         position: absolute;
         left: -1.75rem;
@@ -424,37 +489,37 @@
         align-items: center;
         justify-content: center;
     }
-    
+
     .timeline-marker-primary {
         background-color: #007bff;
         box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.3);
     }
-    
+
     .timeline-marker-success {
         background-color: #28a745;
         box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.3);
     }
-    
+
     .timeline-marker-danger {
         background-color: #dc3545;
         box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.3);
     }
-    
+
     .timeline-marker-info {
         background-color: #17a2b8;
         box-shadow: 0 0 0 3px rgba(23, 162, 184, 0.3);
     }
-    
+
     .timeline-marker-secondary {
         background-color: #6c757d;
         box-shadow: 0 0 0 3px rgba(108, 117, 125, 0.3);
     }
-    
+
     .timeline-content {
         margin-left: 0.5rem;
         padding-top: 0.1rem;
     }
-    
+
     .timeline-title {
         font-size: 0.95rem;
         font-weight: 600;
@@ -462,19 +527,19 @@
         margin-bottom: 0.25rem;
         line-height: 1.2;
     }
-    
+
     .timeline-date {
         font-size: 0.8rem;
         color: #6c757d;
         margin-bottom: 0;
         line-height: 1.1;
     }
-    
+
     /* Lista de información adicional */
     .info-list {
         font-size: 0.9rem;
     }
-    
+
     .info-item {
         display: flex;
         justify-content: space-between;
@@ -482,77 +547,78 @@
         padding: 0.5rem 0;
         border-bottom: 1px solid #f8f9fa;
     }
-    
+
     .info-item:last-child {
         border-bottom: none;
     }
-    
+
     .info-item strong {
         color: #495057;
         font-weight: 600;
         flex-shrink: 0;
         margin-right: 0.5rem;
     }
-    
+
     .info-value {
         color: #6c757d;
         text-align: right;
         font-weight: 500;
     }
-    
+
     /* Responsive */
     @media (max-width: 768px) {
         .custom-timeline {
             padding-left: 1.5rem;
         }
-        
+
         .timeline-marker {
             left: -1.5rem;
             width: 0.8rem;
             height: 0.8rem;
         }
-        
+
         .timeline-content {
             margin-left: 0.3rem;
         }
-        
+
         .timeline-title {
             font-size: 0.9rem;
         }
-        
+
         .timeline-date {
             font-size: 0.75rem;
         }
-        
+
         .info-item {
             flex-direction: column;
             align-items: flex-start;
         }
-        
+
         .info-value {
             text-align: left;
             margin-top: 0.25rem;
         }
     }
-    
+
     /* Animaciones */
     .timeline-item {
         animation: fadeInUp 0.3s ease-out;
     }
-    
+
     .timeline-item:nth-child(2) {
         animation-delay: 0.1s;
     }
-    
+
     .timeline-item:nth-child(3) {
         animation-delay: 0.2s;
     }
-    
+
     @keyframes fadeInUp {
         from {
             opacity: 0;
             transform: translateY(10px);
         }
+
         to {
             opacity: 1;
             transform: translateY(0);
@@ -564,18 +630,164 @@
 {% block extra_js %}
 {{ super() }}
 <script>
-function aprobarSolicitud(solicitudId) {
-    const form = document.getElementById('aprobarForm');
-    form.action = `/admin/solicitud/${solicitudId}/aprobar`;
-    const modal = new bootstrap.Modal(document.getElementById('aprobarModal'));
-    modal.show();
-}
+    function aprobarSolicitud(solicitudId) {
+        const form = document.getElementById('aprobarForm');
+        const infoSection = document.getElementById('infoSolicitud');
+        const estacionamientoSection = document.getElementById('estacionamientoSection');
+        const btnAprobar = document.getElementById('btnAprobar');
 
-function rechazarSolicitud(solicitudId) {
-    const form = document.getElementById('rechazarForm');
-    form.action = `/admin/solicitud/${solicitudId}/rechazar`;
-    const modal = new bootstrap.Modal(document.getElementById('rechazarModal'));
-    modal.show();
-}
+        // Reset form
+        form.action = `/admin/solicitud/${solicitudId}/aprobar`;
+        form.reset();
+        infoSection.style.display = 'none';
+        estacionamientoSection.style.display = 'none';
+        btnAprobar.disabled = false;
+
+        // Mostrar loading
+        btnAprobar.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Cargando...';
+        btnAprobar.disabled = true;
+
+        // Obtener información de la solicitud
+        fetch(`/admin/api/solicitud/${solicitudId}/info`)
+            .then(response => response.json())
+            .then(data => {
+                console.log('Solicitud data:', data);
+                if (data.success) {
+                    solicitudActual = data.solicitud;
+
+                    // Mostrar información de la solicitud
+                    document.getElementById('usuarioNombre').textContent = solicitudActual.usuario.nombre;
+                    document.getElementById('usuarioRol').textContent = solicitudActual.usuario.rol.charAt(0).toUpperCase() + solicitudActual.usuario.rol.slice(1);
+                    document.getElementById('tipoPase').textContent = solicitudActual.tipo_pase.charAt(0).toUpperCase() + solicitudActual.tipo_pase.slice(1);
+                    document.getElementById('vehiculoInfo').textContent = `${solicitudActual.vehiculo.placa} (${solicitudActual.vehiculo.marca} ${solicitudActual.vehiculo.modelo})`;
+                    infoSection.style.display = 'block';
+
+                    // Solo mostrar selección de estacionamiento si es visitante CON pase temporal
+                    const esVisitante = solicitudActual.usuario.rol === 'visita';
+                    const esTemporal = solicitudActual.tipo_pase === 'temporal';
+
+                    if (esVisitante && esTemporal) {
+                        estacionamientoSection.style.display = 'block';
+                        cargarEstacionamientos();
+                    } else {
+                        estacionamientoSection.style.display = 'none';
+                        // Para no visitantes o pases de ciclo, no se requiere estacionamiento
+                        btnAprobar.innerHTML = '<i class="fas fa-check me-2"></i>Aprobar';
+                        btnAprobar.disabled = false;
+                    }
+
+                    // Actualizar texto del botón según el tipo
+                    if (esVisitante && esTemporal) {
+                        btnAprobar.innerHTML = '<i class="fas fa-check me-2"></i>Aprobar y Reservar';
+                    } else {
+                        btnAprobar.innerHTML = '<i class="fas fa-check me-2"></i>Aprobar';
+                        btnAprobar.disabled = false;
+                    }
+
+                    const modal = new bootstrap.Modal(document.getElementById('aprobarModal'));
+                    modal.show();
+                } else {
+                    mostrarNotificacion('Error al cargar la información de la solicitud: ' + data.message, 'error');
+                    btnAprobar.innerHTML = '<i class="fas fa-check me-2"></i>Aprobar';
+                    btnAprobar.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error al obtener información de la solicitud:', error);
+                mostrarNotificacion('Error al cargar la información de la solicitud', 'error');
+                btnAprobar.innerHTML = '<i class="fas fa-check me-2"></i>Aprobar';
+                btnAprobar.disabled = false;
+            });
+    }
+
+    function cargarEstacionamientos() {
+        const select = document.getElementById('estacionamientoSelect');
+        const preview = document.getElementById('estacionamientoPreview');
+        const loading = document.getElementById('loadingEstacionamientos');
+        const btnAprobar = document.getElementById('btnAprobar');
+
+        // Mostrar loading
+        select.innerHTML = '<option value="">Cargando espacios...</option>';
+        select.disabled = true;
+        loading.style.display = 'inline-block';
+        btnAprobar.disabled = true;
+
+        fetch('/admin/api/estacionamientos/disponibles')
+            .then(response => response.json())
+            .then(data => {
+                select.innerHTML = '<option value="">Seleccionar espacio...</option>';
+
+                if (data.success && data.estacionamientos.length > 0) {
+                    data.estacionamientos.forEach(est => {
+                        const option = document.createElement('option');
+                        option.value = est.id;
+                        option.textContent = `Espacio ${est.numero} - ${est.ubicacion}`;
+                        option.dataset.estacionamiento = JSON.stringify(est);
+                        select.appendChild(option);
+                    });
+
+                    // Event listener para actualizar preview
+                    select.addEventListener('change', function () {
+                        const selectedOption = this.options[this.selectedIndex];
+                        if (selectedOption.value && selectedOption.dataset.estacionamiento) {
+                            const est = JSON.parse(selectedOption.dataset.estacionamiento);
+                            preview.innerHTML = `
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="text-start">
+                                    <h6 class="mb-1">Espacio ${est.numero}</h6>
+                                    <small class="text-muted">${est.ubicacion}</small>
+                                    ${est.tipo ? `<br><small class="badge bg-info">${est.tipo}</small>` : ''}
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check me-1"></i>Disponible
+                                    </span>
+                                </div>
+                            </div>
+                        `;
+                            btnAprobar.disabled = false;
+                        } else {
+                            preview.innerHTML = `
+                            <i class="fas fa-car text-muted mb-2"></i>
+                            <small class="text-muted">Seleccione un espacio para ver detalles</small>
+                        `;
+                            btnAprobar.disabled = true;
+                        }
+                    });
+
+                    select.disabled = false;
+                    btnAprobar.disabled = true; // Mantener deshabilitado hasta seleccionar
+
+                } else {
+                    select.innerHTML = '<option value="">No hay espacios disponibles</option>';
+                    preview.innerHTML = `
+                    <div class="text-warning">
+                        <i class="fas fa-exclamation-triangle mb-2"></i>
+                        <br><small>No hay espacios disponibles actualmente</small>
+                    </div>
+                `;
+                    btnAprobar.disabled = true;
+                    mostrarNotificacion('No hay espacios de estacionamiento disponibles', 'warning');
+                }
+
+            })
+            .catch(error => {
+                console.error('Error al cargar estacionamientos:', error);
+                select.innerHTML = '<option value="">Error al cargar espacios</option>';
+                select.disabled = false;
+                btnAprobar.disabled = true;
+                mostrarNotificacion('Error al cargar los espacios de estacionamiento', 'error');
+            })
+            .finally(() => {
+                loading.style.display = 'none';
+            });
+    }
+
+    function rechazarSolicitud(solicitudId) {
+        const form = document.getElementById('rechazarForm');
+        form.action = `/admin/solicitud/${solicitudId}/rechazar`;
+        const modal = new bootstrap.Modal(document.getElementById('rechazarModal'));
+        modal.show();
+    }
 </script>
 {% endblock %}

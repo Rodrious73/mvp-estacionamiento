@@ -1,0 +1,285 @@
+{% extends "visitante/base.html" %}
+
+{% block title %}Ver Pase - Sistema QR Universitario{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card card-action">
+            <div class="card-header bg-transparent">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-qrcode me-2"></i>
+                    Pase Vehicular Temporal
+                </h5>
+                <p class="text-muted mb-0">Detalles y código QR del pase</p>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card border-start border-success border-3">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Información del Pase
+                                </h6>
+                                <table class="table table-sm table-borderless">
+                                    <tr>
+                                        <td class="text-muted"><strong>Código:</strong></td>
+                                        <td><code>{{ pase.qr_code }}</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted"><strong>Tipo:</strong></td>
+                                        <td>
+                                            <span class="badge bg-info">{{ pase.tipo.title() }}</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted"><strong>Estado:</strong></td>
+                                        <td>
+                                            {% if pase.estado == 'vigente' %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check-circle me-1"></i>
+                                                    Vigente
+                                                </span>
+                                            {% elif pase.estado == 'vencido' %}
+                                                <span class="badge bg-danger">
+                                                    <i class="fas fa-times-circle me-1"></i>
+                                                    Vencido
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ pase.estado.title() }}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% if pase.tipo == 'temporal' %}
+                                    <tr>
+                                        <td class="text-muted"><strong>Válido desde:</strong></td>
+                                        <td>
+                                            <i class="fas fa-calendar-alt me-1"></i>
+                                            {{ pase.fecha_inicio.strftime('%d/%m/%Y') }}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted"><strong>Válido hasta:</strong></td>
+                                        <td>
+                                            <i class="fas fa-calendar-check me-1"></i>
+                                            {{ pase.fecha_fin.strftime('%d/%m/%Y') }}
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    <tr>
+                                        <td class="text-muted"><strong>Emitido el:</strong></td>
+                                        <td>
+                                            <i class="fas fa-clock me-1"></i>
+                                            {{ pase.fecha_emision.strftime('%d/%m/%Y %H:%M') }}
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="card border-start border-primary border-3 mt-3">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-car me-2"></i>
+                                    Información del Vehículo
+                                </h6>
+                                <table class="table table-sm table-borderless">
+                                    <tr>
+                                        <td class="text-muted"><strong>Placa:</strong></td>
+                                        <td><strong>{{ pase.vehiculo.placa }}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted"><strong>Marca:</strong></td>
+                                        <td>{{ pase.vehiculo.marca }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted"><strong>Modelo:</strong></td>
+                                        <td>{{ pase.vehiculo.modelo }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted"><strong>Color:</strong></td>
+                                        <td>{{ pase.vehiculo.color }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card border-start border-warning border-3">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">
+                                    <i class="fas fa-qrcode me-2"></i>
+                                    Código QR del Pase
+                                </h6>
+                                <div class="qr-container mb-3">
+                                    <div id="qrcode" class="d-inline-block p-3 bg-white rounded shadow"></div>
+                                </div>
+                                <p class="text-muted small mb-4">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Presenta este código QR al personal de seguridad para acceder al estacionamiento
+                                </p>
+                                
+                                <div class="d-grid gap-2">
+                                    <button type="button" class="btn btn-primary" onclick="imprimirPase()">
+                                        <i class="fas fa-print me-2"></i>
+                                        Imprimir Pase
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="descargarQR()">
+                                        <i class="fas fa-download me-2"></i>
+                                        Descargar QR
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 text-center">
+                    <a href="{{ url_for('visitante.dashboard') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Volver al Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para vista de impresión -->
+<div class="modal fade" id="imprimirModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-id-card me-2"></i>
+                    Pase de Estacionamiento
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center" id="contenidoImprimir">
+                <h4 class="text-primary">Sistema QR Universitario</h4>
+                <hr>
+                <div class="row">
+                    <div class="col-6">
+                        <p><strong>Visitante:</strong> {{ user['name'] }}</p>
+                        <p><strong>DNI:</strong> {{ user['dni'] }}</p>
+                        <p><strong>Código:</strong> <code>{{ pase.qr_code }}</code></p>
+                    </div>
+                    <div class="col-6">
+                        <p><strong>Vehículo:</strong> {{ pase.vehiculo.placa }}</p>
+                        <p><strong>Marca/Modelo:</strong> {{ pase.vehiculo.marca }} {{ pase.vehiculo.modelo }}</p>
+                        <p><strong>Color:</strong> {{ pase.vehiculo.color }}</p>
+                    </div>
+                </div>
+                {% if pase.tipo == 'temporal' %}
+                <div class="alert alert-info">
+                    <strong>Válido del:</strong> {{ pase.fecha_inicio.strftime('%d/%m/%Y') }} al {{ pase.fecha_fin.strftime('%d/%m/%Y') }}
+                </div>
+                {% endif %}
+                <div id="qrcode-print" class="my-3"></div>
+                <p class="small text-muted">
+                    <i class="fas fa-shield-alt me-1"></i>
+                    Presente este pase al personal de seguridad para acceder al estacionamiento
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>
+                    Cerrar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="window.print()">
+                    <i class="fas fa-print me-2"></i>
+                    Imprimir
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js"></script>
+<script>
+// Generar código QR
+const qrData = {
+    codigo: "{{ pase.qr_code }}",
+    tipo: "{{ pase.tipo }}",
+    vehiculo: "{{ pase.vehiculo.placa }}",
+    usuario: "{{ user['name'] }}",
+    fecha_inicio: "{{ pase.fecha_inicio.strftime('%Y-%m-%d') if pase.fecha_inicio else '' }}",
+    fecha_fin: "{{ pase.fecha_fin.strftime('%Y-%m-%d') if pase.fecha_fin else '' }}"
+};
+
+// Crear QR code para mostrar
+QRCode.toCanvas(document.getElementById('qrcode'), JSON.stringify(qrData), {
+    width: 200,
+    margin: 2,
+    color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+    }
+}, function (error) {
+    if (error) console.error(error);
+});
+
+function imprimirPase() {
+    // Crear QR code para imprimir
+    const qrContainer = document.getElementById('qrcode-print');
+    qrContainer.innerHTML = '';
+    
+    QRCode.toCanvas(qrContainer, JSON.stringify(qrData), {
+        width: 150,
+        margin: 2,
+        color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+        }
+    }, function (error) {
+        if (error) {
+            console.error(error);
+        } else {
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('imprimirModal'));
+            modal.show();
+        }
+    });
+}
+
+function descargarQR() {
+    const canvas = document.querySelector('#qrcode canvas');
+    const link = document.createElement('a');
+    link.download = 'pase_qr_{{ pase.qr_code }}.png';
+    link.href = canvas.toDataURL();
+    link.click();
+}
+
+// Estilo para impresión
+const style = document.createElement('style');
+style.textContent = `
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        #contenidoImprimir, #contenidoImprimir * {
+            visibility: visible;
+        }
+        #contenidoImprimir {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+        .modal {
+            position: static !important;
+            display: block !important;
+        }
+        .modal-dialog {
+            margin: 0 !important;
+        }
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}
