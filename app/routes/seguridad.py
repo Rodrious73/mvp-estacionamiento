@@ -89,64 +89,194 @@ def accesos():
 @login_required
 @security_required
 def registro_accesos():
-    """Registro de accesos vehiculares"""
+    """Página de registro de accesos con filtros mejorados"""
+    user = get_current_user()
+    
+    # Obtener parámetros de filtro
+    fecha_desde = request.args.get('fecha_desde')
+    fecha_hasta = request.args.get('fecha_hasta')
+    tipo_filtro = request.args.get('tipo')
+    placa_filtro = request.args.get('placa')
+    estado_filtro = request.args.get('estado')
     page = request.args.get('page', 1, type=int)
     per_page = 20
     
-    # Filtros
-    fecha_desde = request.args.get('fecha_desde')
-    fecha_hasta = request.args.get('fecha_hasta')
-    estado_filtro = request.args.get('estado')  # Cambiar tipo por estado
-    placa_filtro = request.args.get('placa')
+    # Fecha por defecto (hoy)
+    hoy = date.today()
+    if not fecha_desde:
+        fecha_desde = hoy.strftime('%Y-%m-%d')
+    if not fecha_hasta:
+        fecha_hasta = hoy.strftime('%Y-%m-%d')
     
-    # Query base
-    query = RegistroAcceso.query
+    # Construir query base con joins
+    query = RegistroAcceso.query.join(
+        PaseVehicular, RegistroAcceso.pase_id == PaseVehicular.id
+    ).join(
+        Vehiculo, PaseVehicular.vehiculo_id == Vehiculo.id
+    ).join(
+        Usuario, PaseVehicular.usuario_id == Usuario.id
+    )
     
     # Aplicar filtros
     if fecha_desde:
-        query = query.filter(RegistroAcceso.fecha_hora >= datetime.strptime(fecha_desde, '%Y-%m-%d'))
+        query = query.filter(func.date(RegistroAcceso.fecha_hora) >= fecha_desde)
     if fecha_hasta:
-        fecha_hasta_dt = datetime.strptime(fecha_hasta, '%Y-%m-%d')
-        fecha_hasta_dt = fecha_hasta_dt.replace(hour=23, minute=59, second=59)
-        query = query.filter(RegistroAcceso.fecha_hora <= fecha_hasta_dt)
+        query = query.filter(func.date(RegistroAcceso.fecha_hora) <= fecha_hasta)
+    if tipo_filtro:
+        query = query.filter(RegistroAcceso.tipo == tipo_filtro)
+    if placa_filtro:
+        query = query.filter(Vehiculo.placa.ilike(f'%{placa_filtro}%'))
     if estado_filtro:
         query = query.filter(RegistroAcceso.estado == estado_filtro)
-    if placa_filtro:
-        query = query.join(PaseVehicular).join(Vehiculo).filter(
-            Vehiculo.placa.contains(placa_filtro)
-        )
     
-    # Ordenar y paginar
-    accesos = query.order_by(RegistroAcceso.fecha_hora.desc()).paginate(
-        page=page, per_page=per_page, error_out=False
+    # Ordenar por fecha más reciente
+    query = query.order_by(RegistroAcceso.fecha_hora.desc())
+    
+    # Paginación
+    accesos = query.paginate(
+        page=page,
+        per_page=per_page,
+        error_out=False
     )
     
     # Estadísticas del día
-    hoy = date.today()
-    accesos_hoy = RegistroAcceso.query.filter(
+    entradas_hoy = RegistroAcceso.query.filter(
         func.date(RegistroAcceso.fecha_hora) == hoy,
+        RegistroAcceso.tipo == 'entrada',
         RegistroAcceso.estado == 'permitido'
     ).count()
     
-    accesos_denegados_hoy = RegistroAcceso.query.filter(
+    salidas_hoy = RegistroAcceso.query.filter(
         func.date(RegistroAcceso.fecha_hora) == hoy,
-        RegistroAcceso.estado == 'denegado'
+        RegistroAcceso.tipo == 'salida',
+        RegistroAcceso.estado == 'permitido'
     ).count()
     
-    vehiculos_dentro = max(0, accesos_hoy // 2)  # Estimación
-    promedio_estancia = "2h 30m"  # Esto se calcularía basado en datos reales
+    vehiculos_dentro = entradas_hoy - salidas_hoy
+    
+    # Calcular promedio de estancia
+    estancias = RegistroAcceso.query.filter(
+        func.date(RegistroAcceso.fecha_hora) == hoy,
+        RegistroAcceso.tipo == 'salida',
+        RegistroAcceso.estado == 'permitido',
+        RegistroAcceso.duracion_estancia.isnot(None)
+    ).all()
+    
+    promedio_estancia = "N/A"
+    if estancias:
+        promedio_minutos = sum(r.duracion_estancia for r in estancias) / len(estancias)
+        horas = int(promedio_minutos // 60)
+        minutos = int(promedio_minutos % 60)
+        promedio_estancia = f"{horas}h {minutos}m" if horas > 0 else f"{minutos}m"
+    
+    # Accesos recientes para el sidebar
+    accesos_recientes = RegistroAcceso.query.filter(
+        func.date(RegistroAcceso.fecha_hora) == hoy
+    ).order_by(RegistroAcceso.fecha_hora.desc()).limit(5).all()
     
     return render_template('seguridad/registro_acceso.html',
+                         current_user=user,
                          accesos=accesos,
-                         entradas_hoy=accesos_hoy,
-                         salidas_hoy=accesos_denegados_hoy,
+                         accesos_recientes=accesos_recientes,
+                         entradas_hoy=entradas_hoy,
+                         salidas_hoy=salidas_hoy,
                          vehiculos_dentro=vehiculos_dentro,
                          promedio_estancia=promedio_estancia,
                          fecha_desde=fecha_desde,
                          fecha_hasta=fecha_hasta,
-                         estado_filtro=estado_filtro,
+                         fecha_hoy=hoy.strftime('%Y-%m-%d'),
+                         tipo_filtro=tipo_filtro,
                          placa_filtro=placa_filtro,
-                         fecha_hoy=hoy.strftime('%Y-%m-%d'))
+                         estado_filtro=estado_filtro)
+
+@seguridad_bp.route('/registro-accesos/exportar')
+@login_required
+@security_required
+def exportar_registros():
+    """Exportar registros de accesos a CSV"""
+    import csv
+    from io import StringIO
+    from flask import make_response
+    
+    # Obtener parámetros de filtro
+    fecha_desde = request.args.get('fecha_desde')
+    fecha_hasta = request.args.get('fecha_hasta')
+    tipo_filtro = request.args.get('tipo')
+    placa_filtro = request.args.get('placa')
+    
+    # Construir query
+    query = RegistroAcceso.query.join(
+        PaseVehicular, RegistroAcceso.pase_id == PaseVehicular.id
+    ).join(
+        Vehiculo, PaseVehicular.vehiculo_id == Vehiculo.id
+    ).join(
+        Usuario, PaseVehicular.usuario_id == Usuario.id
+    )
+    
+    # Aplicar filtros
+    if fecha_desde:
+        query = query.filter(func.date(RegistroAcceso.fecha_hora) >= fecha_desde)
+    if fecha_hasta:
+        query = query.filter(func.date(RegistroAcceso.fecha_hora) <= fecha_hasta)
+    if tipo_filtro:
+        query = query.filter(RegistroAcceso.tipo == tipo_filtro)
+    if placa_filtro:
+        query = query.filter(Vehiculo.placa.ilike(f'%{placa_filtro}%'))
+    
+    registros = query.order_by(RegistroAcceso.fecha_hora.desc()).all()
+    
+    # Crear CSV
+    output = StringIO()
+    writer = csv.writer(output)
+    
+    # Cabeceras
+    writer.writerow([
+        'Fecha/Hora', 'Tipo', 'Estado', 'Placa', 'Marca', 'Modelo', 
+        'Propietario', 'Espacio', 'Duración', 'Observaciones'
+    ])
+    
+    # Datos
+    for registro in registros:
+        writer.writerow([
+            registro.fecha_hora.strftime('%d/%m/%Y %H:%M:%S'),
+            registro.tipo.title(),
+            registro.estado.title(),
+            registro.pase_vehicular.vehiculo.placa,
+            registro.pase_vehicular.vehiculo.marca,
+            registro.pase_vehicular.vehiculo.modelo,
+            registro.pase_vehicular.usuario.nombre,
+            registro.espacio_asignado or 'N/A',
+            registro.tiempo_estancia_formateado,
+            registro.observaciones or ''
+        ])
+    
+    # Preparar respuesta
+    response = make_response(output.getvalue())
+    response.headers['Content-Type'] = 'text/csv'
+    response.headers['Content-Disposition'] = f'attachment; filename=registros_accesos_{date.today().strftime("%Y%m%d")}.csv'
+    
+    return response
+
+@seguridad_bp.route('/registro-accesos/detalle/<int:id>')
+@login_required
+@security_required
+def detalle_registro(id):
+    """Obtener detalles de un registro específico"""
+    registro = RegistroAcceso.query.get_or_404(id)
+    
+    # Buscar registro de entrada relacionado si es salida
+    registro_entrada = None
+    if registro.tipo == 'salida':
+        registro_entrada = RegistroAcceso.query.filter_by(
+            pase_id=registro.pase_id,
+            tipo='entrada',
+            estado='permitido'
+        ).order_by(RegistroAcceso.fecha_hora.desc()).first()
+    
+    return jsonify({
+        'registro': registro.to_dict(),
+        'entrada_relacionada': registro_entrada.to_dict() if registro_entrada else None
+    })
 
 @seguridad_bp.route('/validar-codigo', methods=['POST'])
 @login_required
