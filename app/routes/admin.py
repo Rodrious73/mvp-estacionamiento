@@ -449,11 +449,18 @@ def usuarios():
     usuarios = query.paginate(
         page=page, per_page=20, error_out=False
     )
+
+    usuarios_seguridad = UsuarioSeguridad.query.order_by(asc(UsuarioSeguridad.nombre)).all()
+
+    administradores = Usuario.query.filter_by(rol='administrador').all()
     
     return render_template('admin/usuarios.html', 
                          usuarios=usuarios, 
                          rol_actual=rol, 
-                         buscar_actual=buscar)
+                         buscar_actual=buscar,
+                         usuarios_seguridad=usuarios_seguridad,
+                         administradores=administradores)
+
 @admin_bp.route('/crear-usuario', methods=['POST'])
 @login_required
 @admin_required
@@ -644,6 +651,7 @@ def pases():
     page = request.args.get('page', 1, type=int)
     estado = request.args.get('estado', 'todos')
     tipo = request.args.get('tipo', 'todos')
+    buscar = request.args.get('buscar', '')
     
     query = PaseVehicular.query
     
@@ -655,6 +663,15 @@ def pases():
     if tipo != 'todos':
         query = query.filter(PaseVehicular.tipo_pase == tipo)
     
+    # Filtrar por búsqueda
+    if buscar:
+        query = query.join(Usuario).join(Vehiculo).filter(
+            db.or_(
+                Vehiculo.placa.ilike(f'%{buscar}%'),
+                Usuario.nombre.ilike(f'%{buscar}%')
+            )
+        )
+    
     # Ordenar por fecha más reciente
     query = query.order_by(desc(PaseVehicular.fecha_emision))
     
@@ -663,10 +680,19 @@ def pases():
         page=page, per_page=15, error_out=False
     )
     
+    # Estadísticas
+    pases_vigentes = PaseVehicular.query.filter_by(estado='vigente').count()
+    pases_expirados = PaseVehicular.query.filter_by(estado='expirado').count()
+    pases_revocados = PaseVehicular.query.filter_by(estado='revocado').count()
+    
     return render_template('admin/pases.html', 
                          pases=pases, 
                          estado_actual=estado, 
-                         tipo_actual=tipo)
+                         tipo_actual=tipo,
+                         buscar_actual=buscar,
+                         pases_vigentes=pases_vigentes,
+                         pases_expirados=pases_expirados,
+                         pases_revocados=pases_revocados)
 
 @admin_bp.route('/pase/<int:id>/revocar', methods=['POST'])
 @login_required
@@ -876,3 +902,35 @@ def api_estadisticas():
     }
     
     return jsonify(data)
+
+@admin_bp.route('/pase/<int:id>')
+@login_required
+@admin_required
+def ver_pase(id):
+    """Ver detalles de un pase vehicular"""
+    pase = PaseVehicular.query.get_or_404(id)
+    return render_template('admin/ver_pase.html', pase=pase)
+
+@admin_bp.route('/pase/<int:id>/descargar', methods=['GET'])
+@login_required
+@admin_required
+def descargar_pase(id):
+    """Descargar PDF de un pase vehicular"""
+    pase = PaseVehicular.query.get_or_404(id)
+    
+    # Aquí puedes implementar la generación del PDF
+    # Por ahora, redirigimos de vuelta a la lista de pases
+    flash('Funcionalidad de descarga en desarrollo', 'info')
+    return redirect(url_for('admin.pases'))
+
+@admin_bp.route('/pase/<int:id>/historial')
+@login_required
+@admin_required
+def historial_pase(id):
+    """Ver historial de accesos de un pase vehicular"""
+    pase = PaseVehicular.query.get_or_404(id)
+    
+    # Aquí puedes implementar el historial de accesos
+    # Por ahora, redirigimos de vuelta a la lista de pases
+    flash('Funcionalidad de historial en desarrollo', 'info')
+    return redirect(url_for('admin.pases'))

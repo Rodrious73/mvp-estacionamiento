@@ -1,245 +1,193 @@
-{% extends "base.html" %}
+{% extends "admin/base.html" %}
 
-{% block title %}Gestión de Vehículos - Panel de Administración{% endblock %}
+{% block title %}Gestión de Vehículos - Panel Administrativo{% endblock %}
 
-{% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <!-- Sidebar -->
-        <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
-            <div class="position-sticky pt-3">
-                <div class="text-center mb-4">
-                    <h5 class="text-primary">
-                        <i class="fas fa-car"></i> Admin Panel
-                    </h5>
-                </div>
-                <ul class="nav flex-column">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin.dashboard') }}">
-                            <i class="fas fa-tachometer-alt"></i> Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin.solicitudes') }}">
-                            <i class="fas fa-file-alt"></i> Solicitudes
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin.ciclos') }}">
-                            <i class="fas fa-calendar"></i> Ciclos Académicos
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin.usuarios') }}">
-                            <i class="fas fa-users"></i> Usuarios
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="{{ url_for('admin.vehiculos') }}">
-                            <i class="fas fa-car"></i> Vehículos
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin.pases') }}">
-                            <i class="fas fa-id-card"></i> Pases Vehiculares
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin.reportes') }}">
-                            <i class="fas fa-chart-bar"></i> Reportes
-                        </a>
-                    </li>
-                    <li class="nav-item mt-3">
-                        <a class="nav-link text-danger" href="{{ url_for('auth.logout') }}">
-                            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </nav>
+{% set active_page = 'vehiculos' %}
+{% set page_title = 'Gestión de Vehículos' %}
+{% set page_icon = 'car' %}
+{% set page_description = 'Administración de vehículos registrados' %}
+{% set show_back_button = true %}
 
-        <!-- Main content -->
-        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2">Gestión de Vehículos</h1>
-            </div>
+{% block page_content %}
+<!-- Filtros de búsqueda -->
+<div class="admin-card">
+    <h4 class="mb-3">
+        <i class="fas fa-search me-2"></i>Buscar Vehículos
+    </h4>
+    <form method="GET" class="row g-3">
+        <div class="col-md-8">
+            <input type="text" name="buscar" class="form-control" 
+                   placeholder="Buscar por placa, marca, modelo o propietario..." 
+                   value="{{ buscar_actual }}">
+        </div>
+        <div class="col-md-4">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-search me-2"></i>Buscar
+            </button>
+            <a href="{{ url_for('admin.vehiculos') }}" class="btn btn-secondary">
+                <i class="fas fa-times me-2"></i>Limpiar
+            </a>
+        </div>
+    </form>
+</div>
 
-            <!-- Flash Messages -->
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-
-            <!-- Filtros de búsqueda -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Buscar Vehículos</h5>
-                </div>
-                <div class="card-body">
-                    <form method="GET" class="row g-3">
-                        <div class="col-md-8">
-                            <input type="text" name="buscar" class="form-control" 
-                                   placeholder="Buscar por placa, marca, modelo o propietario..." 
-                                   value="{{ buscar_actual }}">
-                        </div>
-                        <div class="col-md-4">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-search"></i> Buscar
-                            </button>
-                            <a href="{{ url_for('admin.vehiculos') }}" class="btn btn-secondary">
-                                <i class="fas fa-times"></i> Limpiar
-                            </a>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Tabla de Vehículos -->
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Lista de Vehículos</h5>
-                </div>
-                <div class="card-body">
-                    {% if vehiculos.items %}
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Placa</th>
-                                        <th>Marca/Modelo</th>
-                                        <th>Color</th>
-                                        <th>Propietario</th>
-                                        <th>Rol</th>
-                                        <th>Fecha Registro</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for vehiculo in vehiculos.items %}
-                                        <tr>
-                                            <td>
-                                                <strong>{{ vehiculo.placa }}</strong>
-                                            </td>
-                                            <td>
-                                                {{ vehiculo.marca or 'N/A' }} {{ vehiculo.modelo or '' }}
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-secondary">{{ vehiculo.color or 'N/A' }}</span>
-                                            </td>
-                                            <td>
-                                                {{ vehiculo.propietario.nombre }}
-                                            </td>
-                                            <td>
-                                                <span class="badge 
-                                                   {% if vehiculo.propietario.rol == 'estudiante' %}bg-primary
-                                                   {% elif vehiculo.propietario.rol == 'docente' %}bg-success
-                                                   {% elif vehiculo.propietario.rol == 'visita' %}bg-info
-                                                   {% else %}bg-warning{% endif %}">
-                                                    {{ vehiculo.propietario.rol.title() }}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                {{ vehiculo.fecha_registro.strftime('%d/%m/%Y') }}
-                                            </td>
-                                            <td>
-                                                <div class="btn-group" role="group">
-                                                    <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                            onclick="confirmarEliminacion({{ vehiculo.id }}, '{{ vehiculo.placa }}')">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <!-- Paginación -->
-                        {% if vehiculos.pages > 1 %}
-                            <nav aria-label="Paginación de vehículos">
-                                <ul class="pagination justify-content-center">
-                                    {% if vehiculos.has_prev %}
-                                        <li class="page-item">
-                                            <a class="page-link" href="{{ url_for('admin.vehiculos', page=vehiculos.prev_num, buscar=buscar_actual) }}">
-                                                Anterior
-                                            </a>
-                                        </li>
-                                    {% endif %}
-                                    
-                                    {% for page_num in vehiculos.iter_pages() %}
-                                        {% if page_num %}
-                                            {% if page_num != vehiculos.page %}
-                                                <li class="page-item">
-                                                    <a class="page-link" href="{{ url_for('admin.vehiculos', page=page_num, buscar=buscar_actual) }}">
-                                                        {{ page_num }}
-                                                    </a>
-                                                </li>
-                                            {% else %}
-                                                <li class="page-item active">
-                                                    <span class="page-link">{{ page_num }}</span>
-                                                </li>
-                                            {% endif %}
-                                        {% else %}
-                                            <li class="page-item disabled">
-                                                <span class="page-link">...</span>
-                                            </li>
-                                        {% endif %}
-                                    {% endfor %}
-                                    
-                                    {% if vehiculos.has_next %}
-                                        <li class="page-item">
-                                            <a class="page-link" href="{{ url_for('admin.vehiculos', page=vehiculos.next_num, buscar=buscar_actual) }}">
-                                                Siguiente
-                                            </a>
-                                        </li>
-                                    {% endif %}
-                                </ul>
-                            </nav>
-                        {% endif %}
-                    {% else %}
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i>
-                            No se encontraron vehículos con los criterios de búsqueda.
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        </main>
+<!-- Tabla de Vehículos -->
+<div class="admin-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">
+            <i class="fas fa-list me-2"></i>Lista de Vehículos
+        </h4>
+        <span class="badge badge-admin">{{ vehiculos.total if vehiculos else 0 }} vehículos</span>
     </div>
+    
+    {% if vehiculos.items %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th><i class="fas fa-hashtag me-2"></i>Placa</th>
+                        <th><i class="fas fa-car me-2"></i>Marca/Modelo</th>
+                        <th><i class="fas fa-palette me-2"></i>Color</th>
+                        <th><i class="fas fa-user me-2"></i>Propietario</th>
+                        <th><i class="fas fa-user-tag me-2"></i>Rol</th>
+                        <th><i class="fas fa-calendar me-2"></i>Fecha Registro</th>
+                        <th><i class="fas fa-cogs me-2"></i>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for vehiculo in vehiculos.items %}
+                        <tr>
+                            <td>
+                                <strong>{{ vehiculo.placa }}</strong>
+                            </td>
+                            <td>
+                                {{ vehiculo.marca or 'N/A' }} {{ vehiculo.modelo or '' }}
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ vehiculo.color or 'N/A' }}</span>
+                            </td>
+                            <td>
+                                {{ vehiculo.propietario.nombre }}
+                            </td>
+                            <td>
+                                <span class="badge 
+                                   {% if vehiculo.propietario.rol == 'estudiante' %}bg-primary
+                                   {% elif vehiculo.propietario.rol == 'docente' %}bg-success
+                                   {% elif vehiculo.propietario.rol == 'visita' %}bg-info
+                                   {% else %}bg-warning{% endif %}">
+                                    <i class="fas fa-{% if vehiculo.propietario.rol == 'estudiante' %}graduation-cap{% elif vehiculo.propietario.rol == 'docente' %}chalkboard-teacher{% else %}user{% endif %} me-1"></i>
+                                    {{ vehiculo.propietario.rol.title() }}
+                                </span>
+                            </td>
+                            <td>
+                                {{ vehiculo.fecha_registro.strftime('%d/%m/%Y') }}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                            onclick="confirmarEliminacion({{ vehiculo.id }}, '{{ vehiculo.placa }}')"
+                                            title="Eliminar vehículo">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        {% if vehiculos.pages > 1 %}
+            <nav aria-label="Paginación de vehículos" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if vehiculos.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.vehiculos', page=vehiculos.prev_num, buscar=buscar_actual) }}">
+                                <i class="fas fa-chevron-left me-1"></i>Anterior
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for page_num in vehiculos.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != vehiculos.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('admin.vehiculos', page=page_num, buscar=buscar_actual) }}">
+                                        {{ page_num }}
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">…</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if vehiculos.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.vehiculos', page=vehiculos.next_num, buscar=buscar_actual) }}">
+                                Siguiente<i class="fas fa-chevron-right ms-1"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="empty-state">
+            <i class="fas fa-car"></i>
+            <h5>No hay vehículos registrados</h5>
+            <p>No se encontraron vehículos con los criterios de búsqueda.</p>
+            <a href="{{ url_for('admin.vehiculos') }}" class="btn btn-primary">
+                <i class="fas fa-refresh me-2"></i>Ver todos los vehículos
+            </a>
+        </div>
+    {% endif %}
 </div>
 
 <!-- Modal de confirmación para eliminar -->
 <div class="modal fade" id="eliminarModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Confirmar Eliminación</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-trash me-2"></i>Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>¿Está seguro de que desea eliminar el vehículo <strong id="placaVehiculo"></strong>?</p>
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ¿Está seguro de que desea eliminar el vehículo <strong id="placaVehiculo"></strong>?
+                </div>
                 <p class="text-warning">
-                    <i class="fas fa-exclamation-triangle"></i>
+                    <i class="fas fa-info-circle me-2"></i>
                     Esta acción no se puede deshacer.
                 </p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </button>
                 <form id="formEliminar" method="POST" style="display: inline;">
-                    <button type="submit" class="btn btn-danger">Eliminar Vehículo</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-2"></i>Eliminar Vehículo
+                    </button>
                 </form>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
+{{ super() }}
 <script>
 function confirmarEliminacion(vehiculoId, placa) {
     document.getElementById('placaVehiculo').textContent = placa;

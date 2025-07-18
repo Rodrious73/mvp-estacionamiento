@@ -1,0 +1,455 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Gestión de Pases Vehiculares - Panel Administrativo{% endblock %}
+
+{% set active_page = 'pases' %}
+{% set page_title = 'Gestión de Pases Vehiculares' %}
+{% set page_icon = 'id-card' %}
+{% set page_description = 'Administración de pases vehiculares del sistema' %}
+{% set show_back_button = true %}
+
+{% block page_content %}
+<!-- Mensajes Flash -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show fade-in" role="alert">
+                <i class="fas fa-{{ 'exclamation-circle' if category == 'error' else 'info-circle' if category == 'info' else 'check-circle' }} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<!-- Estadísticas rápidas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon me-3">
+                    <i class="fas fa-check-circle text-success"></i>
+                </div>
+                <div>
+                    <div class="stats-number">{{ pases_vigentes or 0 }}</div>
+                    <div class="stats-label">Pases Vigentes</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon me-3">
+                    <i class="fas fa-clock text-warning"></i>
+                </div>
+                <div>
+                    <div class="stats-number">{{ pases_expirados or 0 }}</div>
+                    <div class="stats-label">Pases Expirados</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon me-3">
+                    <i class="fas fa-ban text-danger"></i>
+                </div>
+                <div>
+                    <div class="stats-number">{{ pases_revocados or 0 }}</div>
+                    <div class="stats-label">Pases Revocados</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon me-3">
+                    <i class="fas fa-id-card text-info"></i>
+                </div>
+                <div>
+                    <div class="stats-number">{{ pases.total if pases else 0 }}</div>
+                    <div class="stats-label">Total Pases</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="admin-card">
+    <h4 class="mb-3">
+        <i class="fas fa-filter me-2"></i>Filtros
+    </h4>
+    <form method="GET" class="row g-3">
+        <div class="col-md-3">
+            <label class="form-label">
+                <i class="fas fa-tasks me-1"></i>Estado
+            </label>
+            <select name="estado" class="form-select">
+                <option value="todos" {% if estado_actual == 'todos' %}selected{% endif %}>Todos</option>
+                <option value="vigente" {% if estado_actual == 'vigente' %}selected{% endif %}>Vigentes</option>
+                <option value="expirado" {% if estado_actual == 'expirado' %}selected{% endif %}>Expirados</option>
+                <option value="revocado" {% if estado_actual == 'revocado' %}selected{% endif %}>Revocados</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">
+                <i class="fas fa-tag me-1"></i>Tipo
+            </label>
+            <select name="tipo" class="form-select">
+                <option value="todos" {% if tipo_actual == 'todos' %}selected{% endif %}>Todos</option>
+                <option value="ciclo" {% if tipo_actual == 'ciclo' %}selected{% endif %}>Ciclo</option>
+                <option value="temporal" {% if tipo_actual == 'temporal' %}selected{% endif %}>Temporal</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">
+                <i class="fas fa-search me-1"></i>Buscar
+            </label>
+            <input type="text" name="buscar" class="form-control" 
+                   placeholder="Placa, usuario..." value="{{ buscar_actual or '' }}">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">&nbsp;</label>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search me-2"></i>Filtrar
+                </button>
+                <a href="{{ url_for('admin.pases') }}" class="btn btn-secondary">
+                    <i class="fas fa-times me-2"></i>Limpiar
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Lista de pases -->
+<div class="admin-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">
+            <i class="fas fa-list me-2"></i>Lista de Pases Vehiculares
+        </h4>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge badge-admin">{{ pases.total if pases else 0 }} pases</span>
+            <button class="btn btn-sm btn-outline-secondary" onclick="actualizarLista()">
+                <i class="fas fa-sync me-1"></i>Actualizar
+            </button>
+        </div>
+    </div>
+
+    {% if pases and pases.items %}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th><i class="fas fa-hashtag me-2"></i>ID</th>
+                    <th><i class="fas fa-user me-2"></i>Usuario</th>
+                    <th><i class="fas fa-car me-2"></i>Vehículo</th>
+                    <th><i class="fas fa-tag me-2"></i>Tipo</th>
+                    <th><i class="fas fa-tasks me-2"></i>Estado</th>
+                    <th><i class="fas fa-calendar me-2"></i>Vigencia</th>
+                    <th><i class="fas fa-clock me-2"></i>Días Restantes</th>
+                    <th><i class="fas fa-cogs me-2"></i>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pase in pases.items %}
+                <tr>
+                    <td>
+                        <strong>#{{ pase.id }}</strong>
+                    </td>
+                    <td>
+                        <div>
+                            <strong>{{ pase.usuario.nombre }}</strong>
+                            <small class="d-block text-muted">{{ pase.usuario.codigo }}</small>
+                            <span class="badge badge-sm 
+                               {% if pase.usuario.rol == 'estudiante' %}bg-primary
+                               {% elif pase.usuario.rol == 'docente' %}bg-success
+                               {% elif pase.usuario.rol == 'visita' %}bg-info
+                               {% else %}bg-warning{% endif %}">
+                                {{ pase.usuario.rol|title }}
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        <div>
+                            <strong>{{ pase.vehiculo.placa }}</strong>
+                            <small class="d-block text-muted">{{ pase.vehiculo.marca }} {{ pase.vehiculo.modelo }}</small>
+                            <small class="d-block text-muted">{{ pase.vehiculo.color }}</small>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge {% if pase.tipo_pase == 'ciclo' %}bg-primary{% else %}bg-info{% endif %}">
+                            <i class="fas fa-{% if pase.tipo_pase == 'ciclo' %}calendar-alt{% else %}clock{% endif %} me-1"></i>
+                            {{ pase.tipo_pase|title }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge 
+                            {% if pase.estado == 'vigente' %}bg-success
+                            {% elif pase.estado == 'expirado' %}bg-warning text-dark
+                            {% elif pase.estado == 'revocado' %}bg-danger
+                            {% else %}bg-secondary{% endif %}">
+                            <i class="fas fa-{% if pase.estado == 'vigente' %}check-circle{% elif pase.estado == 'expirado' %}clock{% elif pase.estado == 'revocado' %}ban{% else %}question{% endif %} me-1"></i>
+                            {{ pase.estado|title }}
+                        </span>
+                    </td>
+                    <td>
+                        <small>{{ pase.fecha_inicio.strftime('%d/%m/%Y') }}</small>
+                        <small class="d-block text-muted">{{ pase.fecha_fin.strftime('%d/%m/%Y') }}</small>
+                    </td>
+                    <td>
+                        {% if pase.estado == 'vigente' %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-check-circle me-1"></i>Vigente
+                            </span>
+                        {% elif pase.estado == 'expirado' %}
+                            <span class="badge bg-warning text-dark">
+                                <i class="fas fa-clock me-1"></i>Expirado
+                            </span>
+                        {% elif pase.estado == 'revocado' %}
+                            <span class="badge bg-danger">
+                                <i class="fas fa-ban me-1"></i>Revocado
+                            </span>
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <a href="{{ url_for('admin.ver_pase', id=pase.id) }}" 
+                               class="btn btn-sm btn-outline-primary" title="Ver detalles">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            {% if pase.estado == 'vigente' %}
+                            <button class="btn btn-sm btn-outline-danger" 
+                                    onclick="revocarPase({{ pase.id }}, '{{ pase.vehiculo.placa }}', '{{ pase.usuario.nombre }}')" 
+                                    title="Revocar pase">
+                                <i class="fas fa-ban"></i>
+                            </button>
+                            {% endif %}
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                        data-bs-toggle="dropdown" title="Más opciones">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{{ url_for('admin.ver_pase', id=pase.id) }}">
+                                        <i class="fas fa-eye me-2"></i>Ver detalles
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin.descargar_pase', id=pase.id) }}">
+                                        <i class="fas fa-download me-2"></i>Descargar PDF
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin.historial_pase', id=pase.id) }}">
+                                        <i class="fas fa-history me-2"></i>Historial de accesos
+                                    </a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Paginación -->
+    {% if pases.pages > 1 %}
+    <nav aria-label="Paginación de pases" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if pases.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('admin.pases', page=pases.prev_num, estado=estado_actual, tipo=tipo_actual, buscar=buscar_actual) }}">
+                    <i class="fas fa-chevron-left me-1"></i>Anterior
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for page_num in pases.iter_pages() %}
+                {% if page_num %}
+                    {% if page_num != pases.page %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.pases', page=page_num, estado=estado_actual, tipo=tipo_actual, buscar=buscar_actual) }}">
+                            {{ page_num }}
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ page_num }}</span>
+                    </li>
+                    {% endif %}
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">…</span>
+                </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if pases.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('admin.pases', page=pases.next_num, estado=estado_actual, tipo=tipo_actual, buscar=buscar_actual) }}">
+                    Siguiente<i class="fas fa-chevron-right ms-1"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-id-card"></i>
+        <h5>No hay pases vehiculares</h5>
+        <p>No se encontraron pases con los filtros aplicados.</p>
+        <a href="{{ url_for('admin.pases') }}" class="btn btn-primary">
+            <i class="fas fa-refresh me-2"></i>Ver todos los pases
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal para revocar pase -->
+<div class="modal fade" id="revocarModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-ban me-2"></i>Revocar Pase Vehicular
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="revocarForm" method="POST">
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>¿Está seguro de que desea revocar este pase vehicular?</strong>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Detalles del pase:</strong>
+                        <ul class="list-unstyled mt-2">
+                            <li><i class="fas fa-user me-2"></i>Usuario: <span id="revocarUsuario"></span></li>
+                            <li><i class="fas fa-car me-2"></i>Vehículo: <span id="revocarVehiculo"></span></li>
+                        </ul>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-comment me-1"></i>Motivo de la revocación <span class="text-danger">*</span>
+                        </label>
+                        <textarea name="motivo" class="form-control" rows="3" required
+                                  placeholder="Explique el motivo de la revocación del pase..."></textarea>
+                        <div class="form-text">Este comentario será registrado en el historial del pase</div>
+                    </div>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Importante:</strong> Una vez revocado, el pase no podrá ser utilizado para ingresar al estacionamiento.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-ban me-2"></i>Revocar Pase
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script>
+// Función para revocar pase
+function revocarPase(paseId, placa, usuario) {
+    document.getElementById('revocarUsuario').textContent = usuario;
+    document.getElementById('revocarVehiculo').textContent = placa;
+    document.getElementById('revocarForm').action = `/admin/pase/${paseId}/revocar`;
+    
+    const modal = new bootstrap.Modal(document.getElementById('revocarModal'));
+    modal.show();
+}
+
+// Función para actualizar la lista
+function actualizarLista() {
+    window.location.reload();
+}
+
+// Función para mostrar notificaciones
+function mostrarNotificacion(mensaje, tipo = 'info') {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${tipo} alert-dismissible fade show fade-in`;
+    alertDiv.innerHTML = `
+        <i class="fas fa-${tipo === 'success' ? 'check-circle' : tipo === 'danger' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+        ${mensaje}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const container = document.querySelector('.container');
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    // Auto-hide después de 5 segundos
+    setTimeout(() => {
+        const alert = new bootstrap.Alert(alertDiv);
+        alert.close();
+    }, 5000);
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Validación del formulario de revocación
+    document.getElementById('revocarForm').addEventListener('submit', function(e) {
+        const motivo = document.querySelector('textarea[name="motivo"]').value.trim();
+        if (!motivo) {
+            e.preventDefault();
+            mostrarNotificacion('Debe proporcionar un motivo para revocar el pase', 'warning');
+            return false;
+        }
+    });
+    
+    // Actualizar automáticamente cada 5 minutos
+    setInterval(function() {
+        if (window.location.href.includes('admin/pases') && !document.querySelector('.modal.show')) {
+            // Solo actualizar si no hay modales abiertos
+            fetch(window.location.href)
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newTable = doc.querySelector('.table-responsive');
+                    const currentTable = document.querySelector('.table-responsive');
+                    
+                    if (newTable && currentTable) {
+                        currentTable.innerHTML = newTable.innerHTML;
+                    }
+                    
+                    // Actualizar estadísticas
+                    const newStats = doc.querySelectorAll('.stats-number');
+                    const currentStats = document.querySelectorAll('.stats-number');
+                    
+                    newStats.forEach((stat, index) => {
+                        if (currentStats[index]) {
+                            currentStats[index].textContent = stat.textContent;
+                        }
+                    });
+                })
+                .catch(error => console.error('Error updating data:', error));
+        }
+    }, 300000); // 5 minutos
+});
+
+// Confirmación antes de revocar
+window.addEventListener('beforeunload', function(e) {
+    const modal = document.querySelector('.modal.show');
+    if (modal && modal.id === 'revocarModal') {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
+</script>
+{% endblock %}

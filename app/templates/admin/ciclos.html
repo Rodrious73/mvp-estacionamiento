@@ -1,118 +1,224 @@
-{% extends 'base.html' %}
+{% extends "admin/base.html" %}
 
-{% block title %}Gestión de Ciclos Académicos - Administrador{% endblock %}
+{% block title %}Gestión de Ciclos Académicos - Panel Administrativo{% endblock %}
 
-{% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0">
-                        <i class="fas fa-calendar-alt"></i> Gestión de Ciclos Académicos
-                    </h4>
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#crearCicloModal">
-                        <i class="fas fa-plus"></i> Crear Nuevo Ciclo
-                    </button>
+{% set active_page = 'ciclos' %}
+{% set page_title = 'Gestión de Ciclos Académicos' %}
+{% set page_icon = 'calendar-alt' %}
+{% set page_description = 'Administración de ciclos académicos' %}
+{% set show_back_button = true %}
+
+{% block page_content %}
+<!-- Estadísticas rápidas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon me-3">
+                    <i class="fas fa-calendar-alt"></i>
                 </div>
-                <div class="card-body">
-                    {% if ciclos %}
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Nombre</th>
-                                        <th>Fecha Inicio</th>
-                                        <th>Fecha Fin</th>
-                                        <th>Estado</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for ciclo in ciclos %}
-                                    <tr>
-                                        <td>
-                                            <strong>{{ ciclo.nombre }}</strong>
-                                            {% if ciclo.estado == 'activo' %}
-                                                <span class="badge bg-success ms-2">ACTIVO</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>{{ ciclo.fecha_inicio.strftime('%d/%m/%Y') }}</td>
-                                        <td>{{ ciclo.fecha_fin.strftime('%d/%m/%Y') }}</td>
-                                        <td>
-                                            {% if ciclo.estado == 'activo' %}
-                                                <span class="badge bg-success">Activo</span>
-                                            {% else %}
-                                                <span class="badge bg-secondary">Inactivo</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if ciclo.estado != 'activo' %}
-                                                <button class="btn btn-sm btn-success" onclick="activarCiclo({{ ciclo.id }})">
-                                                    <i class="fas fa-play"></i> Activar
-                                                </button>
-                                            {% else %}
-                                                <button class="btn btn-sm btn-warning" onclick="desactivarCiclo({{ ciclo.id }})">
-                                                    <i class="fas fa-pause"></i> Desactivar
-                                                </button>
-                                            {% endif %}
-                                            <button class="btn btn-sm btn-info" onclick="editarCiclo({{ ciclo.id }}, '{{ ciclo.nombre }}', '{{ ciclo.fecha_inicio.strftime('%Y-%m-%d') }}', '{{ ciclo.fecha_fin.strftime('%Y-%m-%d') }}')">
-                                                <i class="fas fa-edit"></i> Editar
-                                            </button>
-                                            <button class="btn btn-sm btn-danger" onclick="eliminarCiclo({{ ciclo.id }})">
-                                                <i class="fas fa-trash"></i> Eliminar
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="alert alert-info text-center">
-                            <i class="fas fa-info-circle"></i>
-                            No hay ciclos académicos registrados.
-                        </div>
-                    {% endif %}
+                <div>
+                    <div class="stats-number">{{ ciclos|length }}</div>
+                    <div class="stats-label">Total Ciclos</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon me-3">
+                    <i class="fas fa-play"></i>
+                </div>
+                <div>
+                    <div class="stats-number">{{ ciclos_activos or 0 }}</div>
+                    <div class="stats-label">Activos</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon me-3">
+                    <i class="fas fa-pause"></i>
+                </div>
+                <div>
+                    <div class="stats-number">{{ ciclos_inactivos or 0 }}</div>
+                    <div class="stats-label">Inactivos</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon me-3">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div>
+                    <div class="stats-number">{{ ciclos_proximos or 0 }}</div>
+                    <div class="stats-label">Próximos</div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Gestión de Ciclos -->
+<div class="admin-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">
+            <i class="fas fa-list me-2"></i>Lista de Ciclos Académicos
+        </h4>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#crearCicloModal">
+            <i class="fas fa-plus me-2"></i>Crear Nuevo Ciclo
+        </button>
+    </div>
+    
+    {% if ciclos %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th><i class="fas fa-tag me-2"></i>Nombre</th>
+                        <th><i class="fas fa-calendar-plus me-2"></i>Fecha Inicio</th>
+                        <th><i class="fas fa-calendar-minus me-2"></i>Fecha Fin</th>
+                        <th><i class="fas fa-tasks me-2"></i>Estado</th>
+                        <th><i class="fas fa-clock me-2"></i>Duración</th>
+                        <th><i class="fas fa-cogs me-2"></i>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ciclo in ciclos %}
+                    <tr>
+                        <td>
+                            <strong>{{ ciclo.nombre }}</strong>
+                            {% if ciclo.estado == 'activo' %}
+                                <span class="badge bg-success ms-2">
+                                    <i class="fas fa-star me-1"></i>ACTIVO
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small>{{ ciclo.fecha_inicio.strftime('%d/%m/%Y') }}</small>
+                        </td>
+                        <td>
+                            <small>{{ ciclo.fecha_fin.strftime('%d/%m/%Y') }}</small>
+                        </td>
+                        <td>
+                            {% if ciclo.estado == 'activo' %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-play me-1"></i>Activo
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">
+                                    <i class="fas fa-pause me-1"></i>Inactivo
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small class="text-muted">
+                                {{ (ciclo.fecha_fin - ciclo.fecha_inicio).days }} días
+                            </small>
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                {% if ciclo.estado != 'activo' %}
+                                    <button class="btn btn-sm btn-outline-success" 
+                                            onclick="activarCiclo({{ ciclo.id }})" 
+                                            title="Activar ciclo">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                {% else %}
+                                    <button class="btn btn-sm btn-outline-warning" 
+                                            onclick="desactivarCiclo({{ ciclo.id }})" 
+                                            title="Desactivar ciclo">
+                                        <i class="fas fa-pause"></i>
+                                    </button>
+                                {% endif %}
+                                <button class="btn btn-sm btn-outline-primary" 
+                                        onclick="editarCiclo({{ ciclo.id }}, '{{ ciclo.nombre }}', '{{ ciclo.fecha_inicio.strftime('%Y-%m-%d') }}', '{{ ciclo.fecha_fin.strftime('%Y-%m-%d') }}')" 
+                                        title="Editar ciclo">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" 
+                                        onclick="eliminarCiclo({{ ciclo.id }})" 
+                                        title="Eliminar ciclo">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <i class="fas fa-calendar-alt"></i>
+            <h5>No hay ciclos académicos registrados</h5>
+            <p>Comienza creando el primer ciclo académico del sistema</p>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#crearCicloModal">
+                <i class="fas fa-plus me-2"></i>Crear Primer Ciclo
+            </button>
+        </div>
+    {% endif %}
+</div>
+
 <!-- Modal para crear ciclo -->
 <div class="modal fade" id="crearCicloModal" tabindex="-1" aria-labelledby="crearCicloModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="crearCicloModalLabel">Crear Nuevo Ciclo Académico</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="crearCicloModalLabel">
+                    <i class="fas fa-plus me-2"></i>Crear Nuevo Ciclo Académico
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="crearCicloForm" action="{{ url_for('admin.crear_ciclo') }}" method="POST">
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="nombre" class="form-label">Nombre del Ciclo</label>
+                        <label for="nombre" class="form-label">
+                            <i class="fas fa-tag me-1"></i>Nombre del Ciclo
+                        </label>
                         <input type="text" class="form-control" id="nombre" name="nombre" required
                                placeholder="Ej: 2025-I, 2025-II, etc.">
+                        <div class="form-text">Formato recomendado: YYYY-I o YYYY-II</div>
                     </div>
-                    <div class="mb-3">
-                        <label for="fecha_inicio" class="form-label">Fecha de Inicio</label>
-                        <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="fecha_fin" class="form-label">Fecha de Fin</label>
-                        <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" required>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="fecha_inicio" class="form-label">
+                                    <i class="fas fa-calendar-plus me-1"></i>Fecha de Inicio
+                                </label>
+                                <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="fecha_fin" class="form-label">
+                                    <i class="fas fa-calendar-minus me-1"></i>Fecha de Fin
+                                </label>
+                                <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" required>
+                            </div>
+                        </div>
                     </div>
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" id="activar_inmediatamente" name="activar_inmediatamente">
                         <label class="form-check-label" for="activar_inmediatamente">
-                            Activar inmediatamente (desactivará otros ciclos)
+                            <i class="fas fa-bolt me-1"></i>Activar inmediatamente
                         </label>
+                        <div class="form-text">Esto desactivará todos los demás ciclos automáticamente</div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Crear Ciclo</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Crear Ciclo
+                    </button>
                 </div>
             </form>
         </div>
@@ -123,36 +229,97 @@
 <div class="modal fade" id="editarCicloModal" tabindex="-1" aria-labelledby="editarCicloModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editarCicloModalLabel">Editar Ciclo Académico</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="editarCicloModalLabel">
+                    <i class="fas fa-edit me-2"></i>Editar Ciclo Académico
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="editarCicloForm" method="POST">
                 <div class="modal-body">
                     <input type="hidden" id="edit_ciclo_id" name="ciclo_id">
                     <div class="mb-3">
-                        <label for="edit_nombre" class="form-label">Nombre del Ciclo</label>
+                        <label for="edit_nombre" class="form-label">
+                            <i class="fas fa-tag me-1"></i>Nombre del Ciclo
+                        </label>
                         <input type="text" class="form-control" id="edit_nombre" name="nombre" required>
                     </div>
-                    <div class="mb-3">
-                        <label for="edit_fecha_inicio" class="form-label">Fecha de Inicio</label>
-                        <input type="date" class="form-control" id="edit_fecha_inicio" name="fecha_inicio" required>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit_fecha_inicio" class="form-label">
+                                    <i class="fas fa-calendar-plus me-1"></i>Fecha de Inicio
+                                </label>
+                                <input type="date" class="form-control" id="edit_fecha_inicio" name="fecha_inicio" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit_fecha_fin" class="form-label">
+                                    <i class="fas fa-calendar-minus me-1"></i>Fecha de Fin
+                                </label>
+                                <input type="date" class="form-control" id="edit_fecha_fin" name="fecha_fin" required>
+                            </div>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="edit_fecha_fin" class="form-label">Fecha de Fin</label>
-                        <input type="date" class="form-control" id="edit_fecha_fin" name="fecha_fin" required>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Nota:</strong> Los cambios en las fechas pueden afectar los pases vehiculares activos.
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Actualizar Ciclo</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-info">
+                        <i class="fas fa-save me-2"></i>Actualizar Ciclo
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
+<!-- Modal de confirmación para eliminar -->
+<div class="modal fade" id="eliminarCicloModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-trash me-2"></i>Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ¿Está seguro de que desea eliminar este ciclo académico?
+                </div>
+                <p class="text-warning">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Esta acción no se puede deshacer y puede afectar solicitudes y pases relacionados.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmarEliminarBtn">
+                    <i class="fas fa-trash me-2"></i>Eliminar Ciclo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
 <script>
+// Variables globales
+let cicloIdAEliminar = null;
+
+// Función para activar ciclo
 function activarCiclo(cicloId) {
     if (confirm('¿Estás seguro de que quieres activar este ciclo? Esto desactivará todos los demás ciclos.')) {
         fetch(`{{ url_for('admin.activar_ciclo_ajax', ciclo_id=0) }}`.replace('0', cicloId), {
@@ -164,18 +331,20 @@ function activarCiclo(cicloId) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                location.reload();
+                mostrarNotificacion('Ciclo activado correctamente', 'success');
+                setTimeout(() => location.reload(), 1000);
             } else {
-                alert('Error al activar el ciclo: ' + data.message);
+                mostrarNotificacion('Error al activar el ciclo: ' + data.message, 'danger');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error al activar el ciclo');
+            mostrarNotificacion('Error al activar el ciclo', 'danger');
         });
     }
 }
 
+// Función para desactivar ciclo
 function desactivarCiclo(cicloId) {
     if (confirm('¿Estás seguro de que quieres desactivar este ciclo?')) {
         fetch(`{{ url_for('admin.desactivar_ciclo', ciclo_id=0) }}`.replace('0', cicloId), {
@@ -187,18 +356,20 @@ function desactivarCiclo(cicloId) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                location.reload();
+                mostrarNotificacion('Ciclo desactivado correctamente', 'success');
+                setTimeout(() => location.reload(), 1000);
             } else {
-                alert('Error al desactivar el ciclo: ' + data.message);
+                mostrarNotificacion('Error al desactivar el ciclo: ' + data.message, 'danger');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error al desactivar el ciclo');
+            mostrarNotificacion('Error al desactivar el ciclo', 'danger');
         });
     }
 }
 
+// Función para editar ciclo
 function editarCiclo(cicloId, nombre, fechaInicio, fechaFin) {
     document.getElementById('edit_ciclo_id').value = cicloId;
     document.getElementById('edit_nombre').value = nombre;
@@ -210,54 +381,138 @@ function editarCiclo(cicloId, nombre, fechaInicio, fechaFin) {
     new bootstrap.Modal(document.getElementById('editarCicloModal')).show();
 }
 
+// Función para eliminar ciclo
 function eliminarCiclo(cicloId) {
-    if (confirm('¿Estás seguro de que quieres eliminar este ciclo? Esta acción no se puede deshacer.')) {
-        fetch(`{{ url_for('admin.eliminar_ciclo', ciclo_id=0) }}`.replace('0', cicloId), {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error al eliminar el ciclo: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error al eliminar el ciclo');
-        });
-    }
+    cicloIdAEliminar = cicloId;
+    new bootstrap.Modal(document.getElementById('eliminarCicloModal')).show();
 }
 
-// Validación de fechas
-document.getElementById('fecha_inicio').addEventListener('change', function() {
-    const fechaInicio = new Date(this.value);
-    const fechaFin = document.getElementById('fecha_fin');
+// Función para mostrar notificaciones
+function mostrarNotificacion(mensaje, tipo = 'info') {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${tipo} alert-dismissible fade show fade-in`;
+    alertDiv.innerHTML = `
+        <i class="fas fa-${tipo === 'success' ? 'check-circle' : tipo === 'danger' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+        ${mensaje}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
     
-    if (fechaFin.value) {
-        const fechaFinValue = new Date(fechaFin.value);
-        if (fechaInicio >= fechaFinValue) {
-            alert('La fecha de inicio debe ser anterior a la fecha de fin');
-            this.value = '';
-        }
-    }
-});
+    const container = document.querySelector('.container');
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    // Auto-hide después de 5 segundos
+    setTimeout(() => {
+        const alert = new bootstrap.Alert(alertDiv);
+        alert.close();
+    }, 5000);
+}
 
-document.getElementById('fecha_fin').addEventListener('change', function() {
-    const fechaFin = new Date(this.value);
-    const fechaInicio = document.getElementById('fecha_inicio');
-    
-    if (fechaInicio.value) {
-        const fechaInicioValue = new Date(fechaInicio.value);
-        if (fechaFin <= fechaInicioValue) {
-            alert('La fecha de fin debe ser posterior a la fecha de inicio');
-            this.value = '';
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Validación de fechas para crear ciclo
+    document.getElementById('fecha_inicio').addEventListener('change', function() {
+        const fechaInicio = new Date(this.value);
+        const fechaFin = document.getElementById('fecha_fin');
+        
+        if (fechaFin.value) {
+            const fechaFinValue = new Date(fechaFin.value);
+            if (fechaInicio >= fechaFinValue) {
+                mostrarNotificacion('La fecha de inicio debe ser anterior a la fecha de fin', 'warning');
+                this.value = '';
+            }
         }
-    }
+    });
+
+    document.getElementById('fecha_fin').addEventListener('change', function() {
+        const fechaFin = new Date(this.value);
+        const fechaInicio = document.getElementById('fecha_inicio');
+        
+        if (fechaInicio.value) {
+            const fechaInicioValue = new Date(fechaInicio.value);
+            if (fechaFin <= fechaInicioValue) {
+                mostrarNotificacion('La fecha de fin debe ser posterior a la fecha de inicio', 'warning');
+                this.value = '';
+            }
+        }
+    });
+
+    // Validación de fechas para editar ciclo
+    document.getElementById('edit_fecha_inicio').addEventListener('change', function() {
+        const fechaInicio = new Date(this.value);
+        const fechaFin = document.getElementById('edit_fecha_fin');
+        
+        if (fechaFin.value) {
+            const fechaFinValue = new Date(fechaFin.value);
+            if (fechaInicio >= fechaFinValue) {
+                mostrarNotificacion('La fecha de inicio debe ser anterior a la fecha de fin', 'warning');
+                this.value = '';
+            }
+        }
+    });
+
+    document.getElementById('edit_fecha_fin').addEventListener('change', function() {
+        const fechaFin = new Date(this.value);
+        const fechaInicio = document.getElementById('edit_fecha_inicio');
+        
+        if (fechaInicio.value) {
+            const fechaInicioValue = new Date(fechaInicio.value);
+            if (fechaFin <= fechaInicioValue) {
+                mostrarNotificacion('La fecha de fin debe ser posterior a la fecha de inicio', 'warning');
+                this.value = '';
+            }
+        }
+    });
+
+    // Confirmar eliminación
+    document.getElementById('confirmarEliminarBtn').addEventListener('click', function() {
+        if (cicloIdAEliminar) {
+            fetch(`{{ url_for('admin.eliminar_ciclo', ciclo_id=0) }}`.replace('0', cicloIdAEliminar), {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    mostrarNotificacion('Ciclo eliminado correctamente', 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    mostrarNotificacion('Error al eliminar el ciclo: ' + data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                mostrarNotificacion('Error al eliminar el ciclo', 'danger');
+            })
+            .finally(() => {
+                bootstrap.Modal.getInstance(document.getElementById('eliminarCicloModal')).hide();
+                cicloIdAEliminar = null;
+            });
+        }
+    });
+
+    // Validar formulario de crear ciclo
+    document.getElementById('crearCicloForm').addEventListener('submit', function(e) {
+        const fechaInicio = new Date(document.getElementById('fecha_inicio').value);
+        const fechaFin = new Date(document.getElementById('fecha_fin').value);
+        
+        if (fechaInicio >= fechaFin) {
+            e.preventDefault();
+            mostrarNotificacion('La fecha de inicio debe ser anterior a la fecha de fin', 'warning');
+        }
+    });
+
+    // Validar formulario de editar ciclo
+    document.getElementById('editarCicloForm').addEventListener('submit', function(e) {
+        const fechaInicio = new Date(document.getElementById('edit_fecha_inicio').value);
+        const fechaFin = new Date(document.getElementById('edit_fecha_fin').value);
+        
+        if (fechaInicio >= fechaFin) {
+            e.preventDefault();
+            mostrarNotificacion('La fecha de inicio debe ser anterior a la fecha de fin', 'warning');
+        }
+    });
 });
 </script>
 {% endblock %}

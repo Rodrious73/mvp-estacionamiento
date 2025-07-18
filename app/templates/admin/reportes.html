@@ -1,275 +1,346 @@
-{% extends "base.html" %}
+{% extends "admin/base.html" %}
 
-{% block title %}Reportes - Panel de Administración{% endblock %}
+{% block title %}Reportes y Estadísticas - Panel Administrativo{% endblock %}
 
-{% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <!-- Sidebar -->
-        <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
-            <div class="position-sticky pt-3">
-                <div class="text-center mb-4">
-                    <h5 class="text-primary">
-                        <i class="fas fa-car"></i> Admin Panel
-                    </h5>
+{% set active_page = 'reportes' %}
+{% set page_title = 'Reportes y Estadísticas' %}
+{% set page_icon = 'chart-bar' %}
+{% set page_description = 'Análisis de datos y estadísticas del sistema' %}
+{% set show_back_button = true %}
+
+{% block page_content %}
+<!-- Estadísticas rápidas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon me-3">
+                    <i class="fas fa-calendar-day"></i>
                 </div>
-                <ul class="nav flex-column">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin.dashboard') }}">
-                            <i class="fas fa-tachometer-alt"></i> Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin.solicitudes') }}">
-                            <i class="fas fa-file-alt"></i> Solicitudes
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin.ciclos') }}">
-                            <i class="fas fa-calendar"></i> Ciclos Académicos
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin.usuarios') }}">
-                            <i class="fas fa-users"></i> Usuarios
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin.vehiculos') }}">
-                            <i class="fas fa-car"></i> Vehículos
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin.pases') }}">
-                            <i class="fas fa-id-card"></i> Pases Vehiculares
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="{{ url_for('admin.reportes') }}">
-                            <i class="fas fa-chart-bar"></i> Reportes
-                        </a>
-                    </li>
-                    <li class="nav-item mt-3">
-                        <a class="nav-link text-danger" href="{{ url_for('auth.logout') }}">
-                            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </nav>
-
-        <!-- Main content -->
-        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2">Reportes y Estadísticas</h1>
-                <div class="btn-toolbar mb-2 mb-md-0">
-                    <div class="btn-group me-2">
-                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportarReporte()">
-                            <i class="fas fa-download"></i> Exportar
-                        </button>
-                    </div>
+                <div>
+                    <div class="stats-number">{{ solicitudes_por_dia|length }}</div>
+                    <div class="stats-label">Días con Actividad</div>
                 </div>
             </div>
-
-            <!-- Flash Messages -->
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-
-            <!-- Filtros de fecha -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Filtros de Reporte</h5>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon me-3">
+                    <i class="fas fa-users"></i>
                 </div>
-                <div class="card-body">
-                    <form method="GET" class="row g-3">
-                        <div class="col-md-4">
-                            <label for="fecha_desde" class="form-label">Fecha Desde</label>
-                            <input type="date" name="fecha_desde" id="fecha_desde" class="form-control" 
-                                   value="{{ fecha_desde }}">
-                        </div>
-                        <div class="col-md-4">
-                            <label for="fecha_hasta" class="form-label">Fecha Hasta</label>
-                            <input type="date" name="fecha_hasta" id="fecha_hasta" class="form-control" 
-                                   value="{{ fecha_hasta }}">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">&nbsp;</label>
-                            <div class="d-grid">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-chart-line"></i> Generar Reporte
-                                </button>
-                            </div>
-                        </div>
-                    </form>
+                <div>
+                    <div class="stats-number">{{ usuarios_activos|length }}</div>
+                    <div class="stats-label">Usuarios Activos</div>
                 </div>
             </div>
-
-            <!-- Estadísticas generales -->
-            <div class="row mb-4">
-                <div class="col-md-4">
-                    <div class="card bg-primary text-white">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-grow-1">
-                                    <h4 class="mb-0">{{ solicitudes_por_dia|length }}</h4>
-                                    <p class="mb-0">Días con Actividad</p>
-                                </div>
-                                <div class="flex-shrink-0">
-                                    <i class="fas fa-calendar-day fa-2x opacity-75"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon me-3">
+                    <i class="fas fa-id-card"></i>
                 </div>
-                <div class="col-md-4">
-                    <div class="card bg-success text-white">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-grow-1">
-                                    <h4 class="mb-0">{{ usuarios_activos|length }}</h4>
-                                    <p class="mb-0">Usuarios Activos</p>
-                                </div>
-                                <div class="flex-shrink-0">
-                                    <i class="fas fa-users fa-2x opacity-75"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card bg-info text-white">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-grow-1">
-                                    <h4 class="mb-0">{{ pases_por_estado.values()|sum }}</h4>
-                                    <p class="mb-0">Total Pases</p>
-                                </div>
-                                <div class="flex-shrink-0">
-                                    <i class="fas fa-id-card fa-2x opacity-75"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div>
+                    <div class="stats-number">{{ pases_por_estado.values()|sum }}</div>
+                    <div class="stats-label">Total Pases</div>
                 </div>
             </div>
-
-            <!-- Gráficos y tablas -->
-            <div class="row">
-                <!-- Solicitudes por día -->
-                <div class="col-md-8">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">Solicitudes por Día</h5>
-                        </div>
-                        <div class="card-body">
-                            {% if solicitudes_por_dia %}
-                                <canvas id="chartSolicitudes" width="400" height="200"></canvas>
-                            {% else %}
-                                <div class="alert alert-info">
-                                    No hay datos de solicitudes para el período seleccionado.
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon me-3">
+                    <i class="fas fa-chart-line"></i>
                 </div>
-
-                <!-- Pases por estado -->
-                <div class="col-md-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">Pases por Estado</h5>
-                        </div>
-                        <div class="card-body">
-                            {% if pases_por_estado %}
-                                {% for estado, cantidad in pases_por_estado.items() %}
-                                    <div class="d-flex align-items-center mb-2">
-                                        <i class="fas fa-circle 
-                                           {% if estado == 'vigente' %}text-success
-                                           {% elif estado == 'expirado' %}text-warning
-                                           {% elif estado == 'revocado' %}text-danger
-                                           {% else %}text-secondary{% endif %} me-2"></i>
-                                        <span class="text-capitalize flex-grow-1">{{ estado }}:</span>
-                                        <strong>{{ cantidad }}</strong>
-                                    </div>
-                                {% endfor %}
-                            {% else %}
-                                <p class="text-muted">No hay datos de pases.</p>
-                            {% endif %}
-                        </div>
-                    </div>
+                <div>
+                    <div class="stats-number">{{ solicitudes_por_dia|sum(attribute='1') or 0 }}</div>
+                    <div class="stats-label">Total Solicitudes</div>
                 </div>
             </div>
-
-            <!-- Usuarios más activos -->
-            <div class="row mt-4">
-                <div class="col-md-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">Usuarios Más Activos</h5>
-                        </div>
-                        <div class="card-body">
-                            {% if usuarios_activos %}
-                                <div class="table-responsive">
-                                    <table class="table table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th>Posición</th>
-                                                <th>Nombre</th>
-                                                <th>Rol</th>
-                                                <th>Solicitudes</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for usuario in usuarios_activos %}
-                                                <tr>
-                                                    <td>
-                                                        <span class="badge bg-primary">{{ loop.index }}</span>
-                                                    </td>
-                                                    <td>{{ usuario.nombre }}</td>
-                                                    <td>
-                                                        <span class="badge 
-                                                           {% if usuario.rol == 'estudiante' %}bg-primary
-                                                           {% elif usuario.rol == 'docente' %}bg-success
-                                                           {% elif usuario.rol == 'visita' %}bg-info
-                                                           {% else %}bg-warning{% endif %}">
-                                                            {{ usuario.rol.title() }}
-                                                        </span>
-                                                    </td>
-                                                    <td>
-                                                        <strong>{{ usuario.solicitudes }}</strong>
-                                                    </td>
-                                                </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            {% else %}
-                                <div class="alert alert-info">
-                                    No hay datos de usuarios activos para el período seleccionado.
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
+        </div>
     </div>
 </div>
 
+<!-- Filtros de fecha -->
+<div class="admin-card">
+    <h4 class="mb-3">
+        <i class="fas fa-filter me-2"></i>Filtros de Reporte
+    </h4>
+    <form method="GET" class="row g-3">
+        <div class="col-md-4">
+            <label for="fecha_desde" class="form-label">
+                <i class="fas fa-calendar-alt me-1"></i>Fecha Desde
+            </label>
+            <input type="date" name="fecha_desde" id="fecha_desde" class="form-control" 
+                   value="{{ fecha_desde }}">
+        </div>
+        <div class="col-md-4">
+            <label for="fecha_hasta" class="form-label">
+                <i class="fas fa-calendar-alt me-1"></i>Fecha Hasta
+            </label>
+            <input type="date" name="fecha_hasta" id="fecha_hasta" class="form-control" 
+                   value="{{ fecha_hasta }}">
+        </div>
+        <div class="col-md-4">
+            <label for="tipo_reporte" class="form-label">
+                <i class="fas fa-chart-bar me-1"></i>Tipo de Reporte
+            </label>
+            <select name="tipo_reporte" id="tipo_reporte" class="form-select">
+                <option value="general" {% if tipo_reporte == 'general' %}selected{% endif %}>General</option>
+                <option value="solicitudes" {% if tipo_reporte == 'solicitudes' %}selected{% endif %}>Solicitudes</option>
+                <option value="pases" {% if tipo_reporte == 'pases' %}selected{% endif %}>Pases</option>
+                <option value="usuarios" {% if tipo_reporte == 'usuarios' %}selected{% endif %}>Usuarios</option>
+            </select>
+        </div>
+        <div class="col-12">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-chart-line me-2"></i>Generar Reporte
+            </button>
+            <a href="{{ url_for('admin.reportes') }}" class="btn btn-secondary">
+                <i class="fas fa-times me-2"></i>Limpiar Filtros
+            </a>
+            <button type="button" class="btn btn-success" onclick="exportarReporte()">
+                <i class="fas fa-download me-2"></i>Exportar
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Gráficos y tablas -->
+<div class="row">
+    <!-- Solicitudes por día -->
+    <div class="col-md-8">
+        <div class="admin-card">
+            <h4 class="mb-3">
+                <i class="fas fa-chart-area me-2"></i>Solicitudes por Día
+            </h4>
+            {% if solicitudes_por_dia %}
+                <div class="chart-container">
+                    <canvas id="chartSolicitudes"></canvas>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-chart-area"></i>
+                    <h5>No hay datos de solicitudes</h5>
+                    <p>No se encontraron solicitudes para el período seleccionado.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Pases por estado -->
+    <div class="col-md-4">
+        <div class="admin-card">
+            <h4 class="mb-3">
+                <i class="fas fa-chart-pie me-2"></i>Pases por Estado
+            </h4>
+            {% if pases_por_estado %}
+                <div class="chart-container">
+                    <canvas id="chartPases"></canvas>
+                </div>
+                <div class="mt-3">
+                    {% for estado, cantidad in pases_por_estado.items() %}
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-circle 
+                               {% if estado == 'vigente' %}text-success
+                               {% elif estado == 'expirado' %}text-warning
+                               {% elif estado == 'revocado' %}text-danger
+                               {% else %}text-secondary{% endif %} me-2"></i>
+                            <span class="text-capitalize flex-grow-1">{{ estado }}:</span>
+                            <strong>{{ cantidad }}</strong>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-chart-pie"></i>
+                    <h5>No hay datos de pases</h5>
+                    <p>No se encontraron pases para mostrar.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Usuarios más activos -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="admin-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">
+                    <i class="fas fa-trophy me-2"></i>Usuarios Más Activos
+                </h4>
+                <span class="badge badge-admin">Top {{ usuarios_activos|length }}</span>
+            </div>
+            {% if usuarios_activos %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th><i class="fas fa-medal me-2"></i>Posición</th>
+                                <th><i class="fas fa-user me-2"></i>Nombre</th>
+                                <th><i class="fas fa-id-card me-2"></i>Código</th>
+                                <th><i class="fas fa-user-tag me-2"></i>Rol</th>
+                                <th><i class="fas fa-file-alt me-2"></i>Solicitudes</th>
+                                <th><i class="fas fa-calendar me-2"></i>Última Actividad</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for usuario in usuarios_activos %}
+                                <tr>
+                                    <td>
+                                        <span class="badge 
+                                           {% if loop.index == 1 %}bg-warning
+                                           {% elif loop.index == 2 %}bg-secondary
+                                           {% elif loop.index == 3 %}bg-info
+                                           {% else %}bg-primary{% endif %}">
+                                            <i class="fas fa-{% if loop.index == 1 %}trophy{% elif loop.index == 2 %}medal{% elif loop.index == 3 %}award{% else %}star{% endif %} me-1"></i>
+                                            {{ loop.index }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <strong>{{ usuario.nombre }}</strong>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ usuario.codigo }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge 
+                                           {% if usuario.rol == 'estudiante' %}bg-primary
+                                           {% elif usuario.rol == 'docente' %}bg-success
+                                           {% elif usuario.rol == 'visita' %}bg-info
+                                           {% else %}bg-warning{% endif %}">
+                                            <i class="fas fa-{% if usuario.rol == 'estudiante' %}graduation-cap{% elif usuario.rol == 'docente' %}chalkboard-teacher{% else %}user{% endif %} me-1"></i>
+                                            {{ usuario.rol.title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <strong class="text-primary">{{ usuario.solicitudes }}</strong>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {% if usuario.ultima_actividad %}
+                                                {{ usuario.ultima_actividad.strftime('%d/%m/%Y') }}
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-users"></i>
+                    <h5>No hay datos de usuarios activos</h5>
+                    <p>No se encontraron usuarios activos para el período seleccionado.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Estadísticas adicionales -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="admin-card">
+            <h4 class="mb-3">
+                <i class="fas fa-chart-bar me-2"></i>Solicitudes por Tipo
+            </h4>
+            {% if solicitudes_por_tipo %}
+                <div class="chart-container">
+                    <canvas id="chartTipoSolicitudes"></canvas>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-chart-bar"></i>
+                    <h5>No hay datos por tipo</h5>
+                    <p>No se encontraron solicitudes por tipo.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="admin-card">
+            <h4 class="mb-3">
+                <i class="fas fa-users me-2"></i>Usuarios por Rol
+            </h4>
+            {% if usuarios_por_rol %}
+                <div class="chart-container">
+                    <canvas id="chartUsuariosRol"></canvas>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-users"></i>
+                    <h5>No hay datos por rol</h5>
+                    <p>No se encontraron usuarios por rol.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Resumen del período -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="admin-card">
+            <h4 class="mb-3">
+                <i class="fas fa-info-circle me-2"></i>Resumen del Período
+            </h4>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h3 class="text-primary">{{ total_solicitudes or 0 }}</h3>
+                        <p class="text-muted">Total Solicitudes</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h3 class="text-success">{{ solicitudes_aprobadas or 0 }}</h3>
+                        <p class="text-muted">Aprobadas</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h3 class="text-danger">{{ solicitudes_rechazadas or 0 }}</h3>
+                        <p class="text-muted">Rechazadas</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h3 class="text-warning">{{ solicitudes_pendientes or 0 }}</h3>
+                        <p class="text-muted">Pendientes</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+// Configuración común para gráficos
+const chartColors = {
+    primary: '#dc3545',
+    success: '#28a745',
+    warning: '#ffc107',
+    info: '#17a2b8',
+    secondary: '#6c757d'
+};
+
 // Gráfico de solicitudes por día
 {% if solicitudes_por_dia %}
-const ctx = document.getElementById('chartSolicitudes').getContext('2d');
-const chart = new Chart(ctx, {
+const ctxSolicitudes = document.getElementById('chartSolicitudes').getContext('2d');
+const chartSolicitudes = new Chart(ctxSolicitudes, {
     type: 'line',
     data: {
         labels: [
@@ -284,13 +355,15 @@ const chart = new Chart(ctx, {
                     {{ cantidad }},
                 {% endfor %}
             ],
-            borderColor: 'rgb(75, 192, 192)',
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            tension: 0.1
+            borderColor: chartColors.primary,
+            backgroundColor: chartColors.primary + '20',
+            tension: 0.1,
+            fill: true
         }]
     },
     options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
             title: {
                 display: true,
@@ -306,9 +379,183 @@ const chart = new Chart(ctx, {
 });
 {% endif %}
 
+// Gráfico de pases por estado
+{% if pases_por_estado %}
+const ctxPases = document.getElementById('chartPases').getContext('2d');
+const chartPases = new Chart(ctxPases, {
+    type: 'doughnut',
+    data: {
+        labels: [
+            {% for estado, cantidad in pases_por_estado.items() %}
+                '{{ estado|title }}',
+            {% endfor %}
+        ],
+        datasets: [{
+            data: [
+                {% for estado, cantidad in pases_por_estado.items() %}
+                    {{ cantidad }},
+                {% endfor %}
+            ],
+            backgroundColor: [
+                chartColors.success,
+                chartColors.warning,
+                chartColors.danger,
+                chartColors.secondary
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+{% endif %}
+
+// Gráfico de solicitudes por tipo
+{% if solicitudes_por_tipo %}
+const ctxTipoSolicitudes = document.getElementById('chartTipoSolicitudes').getContext('2d');
+const chartTipoSolicitudes = new Chart(ctxTipoSolicitudes, {
+    type: 'bar',
+    data: {
+        labels: [
+            {% for tipo, cantidad in solicitudes_por_tipo.items() %}
+                '{{ tipo|title }}',
+            {% endfor %}
+        ],
+        datasets: [{
+            label: 'Solicitudes',
+            data: [
+                {% for tipo, cantidad in solicitudes_por_tipo.items() %}
+                    {{ cantidad }},
+                {% endfor %}
+            ],
+            backgroundColor: chartColors.primary,
+            borderColor: chartColors.primary,
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+{% endif %}
+
+// Gráfico de usuarios por rol
+{% if usuarios_por_rol %}
+const ctxUsuariosRol = document.getElementById('chartUsuariosRol').getContext('2d');
+const chartUsuariosRol = new Chart(ctxUsuariosRol, {
+    type: 'pie',
+    data: {
+        labels: [
+            {% for rol, cantidad in usuarios_por_rol.items() %}
+                '{{ rol|title }}',
+            {% endfor %}
+        ],
+        datasets: [{
+            data: [
+                {% for rol, cantidad in usuarios_por_rol.items() %}
+                    {{ cantidad }},
+                {% endfor %}
+            ],
+            backgroundColor: [
+                chartColors.primary,
+                chartColors.success,
+                chartColors.info,
+                chartColors.warning
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+{% endif %}
+
+// Función para exportar reporte
 function exportarReporte() {
-    // Implementar exportación a PDF o Excel
-    alert('Función de exportación no implementada aún');
+    const params = new URLSearchParams(window.location.search);
+    params.set('export', 'excel');
+    
+    const exportUrl = `${window.location.pathname}?${params.toString()}`;
+    
+    // Crear un enlace temporal para descargar
+    const link = document.createElement('a');
+    link.href = exportUrl;
+    link.download = `reporte-${new Date().toISOString().split('T')[0]}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    mostrarNotificacion('Descargando reporte...', 'info');
 }
+
+// Función para mostrar notificaciones
+function mostrarNotificacion(mensaje, tipo = 'info') {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${tipo} alert-dismissible fade show fade-in`;
+    alertDiv.innerHTML = `
+        <i class="fas fa-${tipo === 'success' ? 'check-circle' : tipo === 'danger' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+        ${mensaje}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const container = document.querySelector('.container');
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    // Auto-hide después de 5 segundos
+    setTimeout(() => {
+        const alert = new bootstrap.Alert(alertDiv);
+        alert.close();
+    }, 5000);
+}
+
+// Validación de fechas
+document.addEventListener('DOMContentLoaded', function() {
+    const fechaDesde = document.getElementById('fecha_desde');
+    const fechaHasta = document.getElementById('fecha_hasta');
+    
+    fechaDesde.addEventListener('change', function() {
+        if (fechaHasta.value && this.value > fechaHasta.value) {
+            mostrarNotificacion('La fecha desde no puede ser mayor que la fecha hasta', 'warning');
+            this.value = '';
+        }
+    });
+    
+    fechaHasta.addEventListener('change', function() {
+        if (fechaDesde.value && this.value < fechaDesde.value) {
+            mostrarNotificacion('La fecha hasta no puede ser menor que la fecha desde', 'warning');
+            this.value = '';
+        }
+    });
+    
+    // Actualizar gráficos cada 5 minutos
+    setInterval(function() {
+        if (document.visibilityState === 'visible') {
+            window.location.reload();
+        }
+    }, 300000); // 5 minutos
+});
 </script>
 {% endblock %}

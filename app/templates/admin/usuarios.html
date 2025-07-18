@@ -1,378 +1,424 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Usuarios - Sistema de Estacionamientos</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-</head>
-<body>
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
-                <div class="position-sticky pt-3">
-                    <ul class="nav flex-column">
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('admin.dashboard') }}">
-                                <i class="fas fa-tachometer-alt"></i> Dashboard
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link active" href="{{ url_for('admin.usuarios') }}">
-                                <i class="fas fa-users"></i> Usuarios
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('admin.vehiculos') }}">
-                                <i class="fas fa-car"></i> Vehículos
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('admin.pases') }}">
-                                <i class="fas fa-id-card"></i> Pases
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </nav>
+{% extends "admin/base.html" %}
 
-            <!-- Main content -->
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2">Gestión de Usuarios</h1>
-                </div>
+{% block title %}Gestión de Usuarios - Panel Administrativo{% endblock %}
 
-                <!-- Mensajes Flash -->
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
+{% set active_page = 'usuarios' %}
+{% set page_title = 'Gestión de Usuarios' %}
+{% set page_icon = 'users' %}
+{% set page_description = 'Administración de usuarios del sistema' %}
+{% set show_back_button = true %}
 
-                <!-- Tabs de navegación -->
-                <ul class="nav nav-tabs" id="usuariosTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="todos-tab" data-bs-toggle="tab" data-bs-target="#todos" type="button" role="tab">
-                            <i class="fas fa-list"></i> Todos los Usuarios
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin" type="button" role="tab">
-                            <i class="fas fa-user-shield"></i> Administradores
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="seguridad-tab" data-bs-toggle="tab" data-bs-target="#seguridad" type="button" role="tab">
-                            <i class="fas fa-security"></i> Personal de Seguridad
-                        </button>
-                    </li>
-                </ul>
+{% block page_content %}
+<!-- Filtros y Tabs -->
+<div class="admin-card">
+    <h4 class="mb-3">
+        <i class="fas fa-filter me-2"></i>Filtros por Categoría
+    </h4>
+    <ul class="nav nav-tabs" id="usuariosTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="todos-tab" data-bs-toggle="tab" data-bs-target="#todos" type="button" role="tab">
+                <i class="fas fa-list me-2"></i>Todos los Usuarios
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin" type="button" role="tab">
+                <i class="fas fa-user-shield me-2"></i>Administradores
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="seguridad-tab" data-bs-toggle="tab" data-bs-target="#seguridad" type="button" role="tab">
+                <i class="fas fa-shield-alt me-2"></i>Personal de Seguridad
+            </button>
+        </li>
+    </ul>
+</div>
 
-                <div class="tab-content" id="usuariosTabsContent">
-                    <!-- Tab: Todos los Usuarios -->
-                    <div class="tab-pane fade show active" id="todos" role="tabpanel">
-                        <div class="card mt-3">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">Lista de Todos los Usuarios</h5>
-                                <div>
-                                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalNuevoUsuario">
-                                        <i class="fas fa-plus"></i> Nuevo Usuario
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-striped table-hover">
-                                        <thead>
-                                            <tr>
-                                                <th>ID</th>
-                                                <th>Nombre</th>
-                                                <th>DNI</th>
-                                                <th>Rol</th>
-                                                <th>Email</th>
-                                                <th>Código Univ.</th>
-                                                <th>Fecha Registro</th>
-                                                <th>Acciones</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for usuario in usuarios %}
-                                            <tr>
-                                                <td>{{ usuario.id }}</td>
-                                                <td>{{ usuario.nombre }}</td>
-                                                <td>{{ usuario.dni }}</td>
-                                                <td>
-                                                    <span class="badge bg-{{ 'danger' if usuario.rol == 'administrador' else 'primary' if usuario.rol == 'docente' else 'success' if usuario.rol == 'estudiante' else 'warning' }}">
-                                                        {{ usuario.rol.title() }}
-                                                    </span>
-                                                </td>
-                                                <td>{{ usuario.email or '-' }}</td>
-                                                <td>{{ usuario.codigo_universitario or '-' }}</td>
-                                                <td>{{ usuario.fecha_registro.strftime('%d/%m/%Y') if usuario.fecha_registro else '-' }}</td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-primary" onclick="editarUsuario({{ usuario.id }})">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="btn btn-sm btn-outline-danger" onclick="eliminarUsuario({{ usuario.id }})">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Tab: Administradores -->
-                    <div class="tab-pane fade" id="admin" role="tabpanel">
-                        <div class="card mt-3">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">Administradores del Sistema</h5>
-                                <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalNuevoAdmin">
-                                    <i class="fas fa-plus"></i> Nuevo Administrador
-                                </button>
-                            </div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th>ID</th>
-                                                <th>Nombre</th>
-                                                <th>DNI</th>
-                                                <th>Email</th>
-                                                <th>Fecha Registro</th>
-                                                <th>Acciones</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for admin in administradores %}
-                                            <tr>
-                                                <td>{{ admin.id }}</td>
-                                                <td>{{ admin.nombre }}</td>
-                                                <td>{{ admin.dni }}</td>
-                                                <td>{{ admin.email or '-' }}</td>
-                                                <td>{{ admin.fecha_registro.strftime('%d/%m/%Y') if admin.fecha_registro else '-' }}</td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-primary" onclick="editarUsuario({{ admin.id }})">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="btn btn-sm btn-outline-danger" onclick="eliminarUsuario({{ admin.id }})">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Tab: Personal de Seguridad -->
-                    <div class="tab-pane fade" id="seguridad" role="tabpanel">
-                        <div class="card mt-3">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">Personal de Seguridad</h5>
-                                <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalNuevoSeguridad">
-                                    <i class="fas fa-plus"></i> Nuevo Personal de Seguridad
-                                </button>
-                            </div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th>ID</th>
-                                                <th>Nombre</th>
-                                                <th>Usuario</th>
-                                                <th>Acciones</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for seguridad in usuarios_seguridad %}
-                                            <tr>
-                                                <td>{{ seguridad.id }}</td>
-                                                <td>{{ seguridad.nombre }}</td>
-                                                <td>{{ seguridad.usuario }}</td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-primary" onclick="editarSeguridad({{ seguridad.id }})">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="btn btn-sm btn-outline-danger" onclick="eliminarSeguridad({{ seguridad.id }})">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </main>
-        </div>
-    </div>
-
-    <!-- Modal: Nuevo Usuario -->
-    <div class="modal fade" id="modalNuevoUsuario" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Nuevo Usuario</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <form method="POST" action="{{ url_for('admin.crear_usuario') }}">
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="nombre" class="form-label">Nombre Completo</label>
-                            <input type="text" class="form-control" id="nombre" name="nombre" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="dni" class="form-label">DNI</label>
-                            <input type="text" class="form-control" id="dni" name="dni" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="rol" class="form-label">Rol</label>
-                            <select class="form-select" id="rol" name="rol" required>
-                                <option value="">Seleccionar...</option>
-                                <option value="estudiante">Estudiante</option>
-                                <option value="docente">Docente</option>
-                                <option value="visita">Visita</option>
-                                <option value="administrador">Administrador</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="codigo_universitario" class="form-label">Código Universitario</label>
-                            <input type="text" class="form-control" id="codigo_universitario" name="codigo_universitario">
-                        </div>
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="email" name="email">
-                        </div>
-                        <div class="mb-3">
-                            <label for="telefono" class="form-label">Teléfono</label>
-                            <input type="text" class="form-control" id="telefono" name="telefono">
-                        </div>
-                        <div class="mb-3">
-                            <label for="contraseña" class="form-label">Contraseña</label>
-                            <input type="password" class="form-control" id="contraseña" name="contraseña" required>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Crear Usuario</button>
-                    </div>
-                </form>
+<!-- Contenido de las Pestañas -->
+<div class="tab-content" id="usuariosTabsContent">
+    <!-- Mantener todo el contenido existente de las pestañas -->
+    <!-- Tab: Todos los Usuarios -->
+    <div class="tab-pane fade show active" id="todos" role="tabpanel">
+        <div class="admin-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">
+                    <i class="fas fa-users me-2"></i>Todos los Usuarios
+                </h4>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevoUsuario">
+                    <i class="fas fa-plus me-2"></i>Nuevo Usuario
+                </button>
             </div>
-        </div>
-    </div>
-
-    <!-- Modal: Nuevo Administrador -->
-    <div class="modal fade" id="modalNuevoAdmin" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Nuevo Administrador</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            
+            {% if usuarios %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th><i class="fas fa-hashtag me-2"></i>ID</th>
+                                <th><i class="fas fa-user me-2"></i>Nombre</th>
+                                <th><i class="fas fa-envelope me-2"></i>Email</th>
+                                <th><i class="fas fa-id-card me-2"></i>Código</th>
+                                <th><i class="fas fa-user-tag me-2"></i>Rol</th>
+                                <th><i class="fas fa-calendar me-2"></i>Registro</th>
+                                <th><i class="fas fa-cogs me-2"></i>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for usuario in usuarios %}
+                            <tr>
+                                <td>#{{ usuario.id }}</td>
+                                <td>{{ usuario.nombre }}</td>
+                                <td>{{ usuario.email }}</td>
+                                <td>{{ usuario.codigo }}</td>
+                                <td>
+                                    <span class="badge bg-{% if usuario.rol == 'estudiante' %}primary{% elif usuario.rol == 'docente' %}success{% else %}secondary{% endif %}">
+                                        <i class="fas fa-{% if usuario.rol == 'estudiante' %}graduation-cap{% elif usuario.rol == 'docente' %}chalkboard-teacher{% else %}user{% endif %} me-1"></i>
+                                        {{ usuario.rol|title }}
+                                    </span>
+                                </td>
+                                <td>{{ usuario.fecha_registro.strftime('%d/%m/%Y') if usuario.fecha_registro else 'N/A' }}</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-sm btn-outline-primary" onclick="editarUsuario({{ usuario.id }})" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <a href="#" class="btn btn-sm btn-outline-danger" onclick="eliminarUsuario({{ usuario.id }})" title="Eliminar">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
-                <form method="POST" action="{{ url_for('admin.crear_administrador') }}">
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="admin_nombre" class="form-label">Nombre Completo</label>
-                            <input type="text" class="form-control" id="admin_nombre" name="nombre" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="admin_dni" class="form-label">DNI</label>
-                            <input type="text" class="form-control" id="admin_dni" name="dni" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="admin_email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="admin_email" name="email">
-                        </div>
-                        <div class="mb-3">
-                            <label for="admin_contraseña" class="form-label">Contraseña</label>
-                            <input type="password" class="form-control" id="admin_contraseña" name="contraseña" required>
-                        </div>
-                        <input type="hidden" name="rol" value="administrador">
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-danger">Crear Administrador</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: Nuevo Personal de Seguridad -->
-    <div class="modal fade" id="modalNuevoSeguridad" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Nuevo Personal de Seguridad</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-users"></i>
+                    <h5>No hay usuarios registrados</h5>
+                    <p>Comienza agregando el primer usuario al sistema</p>
                 </div>
-                <form method="POST" action="{{ url_for('admin.crear_usuario_seguridad') }}">
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="seg_nombre" class="form-label">Nombre Completo</label>
-                            <input type="text" class="form-control" id="seg_nombre" name="nombre" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="seg_usuario" class="form-label">Usuario</label>
-                            <input type="text" class="form-control" id="seg_usuario" name="usuario" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="seg_contraseña" class="form-label">Contraseña</label>
-                            <input type="password" class="form-control" id="seg_contraseña" name="contraseña" required>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-success">Crear Personal de Seguridad</button>
-                    </div>
-                </form>
-            </div>
+            {% endif %}
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function editarUsuario(id) {
-            // Aquí puedes implementar la lógica para editar usuario
-            console.log('Editar usuario ID:', id);
-        }
+    <!-- Tab: Administradores -->
+    <div class="tab-pane fade" id="admin" role="tabpanel">
+        <div class="admin-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">
+                    <i class="fas fa-user-shield me-2"></i>Administradores
+                </h4>
+                <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modalNuevoAdmin">
+                    <i class="fas fa-plus me-2"></i>Nuevo Administrador
+                </button>
+            </div>
+            
+            {% if administradores %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th><i class="fas fa-hashtag me-2"></i>ID</th>
+                                <th><i class="fas fa-user me-2"></i>Nombre</th>
+                                <th><i class="fas fa-envelope me-2"></i>Email</th>
+                                <th><i class="fas fa-key me-2"></i>Rol</th>
+                                <th><i class="fas fa-calendar me-2"></i>Creado</th>
+                                <th><i class="fas fa-cogs me-2"></i>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for admin in administradores %}
+                            <tr>
+                                <td>#{{ admin.id }}</td>
+                                <td>{{ admin.name }}</td>
+                                <td>{{ admin.email }}</td>
+                                <td>
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-user-shield me-1"></i>
+                                        Administrador
+                                    </span>
+                                </td>
+                                <td>{{ admin.created_at.strftime('%d/%m/%Y') if admin.created_at else 'N/A' }}</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-sm btn-outline-primary" onclick="editarAdmin({{ admin.id }})" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <a href="#" class="btn btn-sm btn-outline-danger" onclick="eliminarAdmin({{ admin.id }})" title="Eliminar">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-user-shield"></i>
+                    <h5>No hay administradores registrados</h5>
+                    <p>Agrega administradores para gestionar el sistema</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
 
-        function eliminarUsuario(id) {
-            if (confirm('¿Está seguro de que desea eliminar este usuario?')) {
-                window.location.href = `/admin/usuarios/${id}/eliminar`;
-            }
-        }
+    <!-- Tab: Personal de Seguridad -->
+    <div class="tab-pane fade" id="seguridad" role="tabpanel">
+        <div class="admin-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">
+                    <i class="fas fa-shield-alt me-2"></i>Personal de Seguridad
+                </h4>
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalNuevoSeguridad">
+                    <i class="fas fa-plus me-2"></i>Nuevo Personal
+                </button>
+            </div>
+            
+            {% if usuarios_seguridad %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th><i class="fas fa-hashtag me-2"></i>ID</th>
+                                <th><i class="fas fa-user me-2"></i>Nombre</th>
+                                <th><i class="fas fa-envelope me-2"></i>Email</th>
+                                <th><i class="fas fa-shield-alt me-2"></i>Rol</th>
+                                <th><i class="fas fa-calendar me-2"></i>Creado</th>
+                                <th><i class="fas fa-cogs me-2"></i>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for seguridad in usuarios_seguridad %}
+                            <tr>
+                                <td>#{{ seguridad.id }}</td>
+                                <td>{{ seguridad.nombre }}</td>
+                                <td>{{ seguridad.email }}</td>
+                                <td>
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-shield-alt me-1"></i>
+                                        Seguridad
+                                    </span>
+                                </td>
+                                <td>{{ seguridad.fecha_creacion.strftime('%d/%m/%Y') if seguridad.fecha_creacion else 'N/A' }}</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-sm btn-outline-primary" onclick="editarSeguridad({{ seguridad.id }})" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <a href="#" class="btn btn-sm btn-outline-danger" onclick="eliminarSeguridad({{ seguridad.id }})" title="Eliminar">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-shield-alt"></i>
+                    <h5>No hay personal de seguridad registrado</h5>
+                    <p>Agrega personal de seguridad para gestionar el acceso vehicular</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
 
-        function editarSeguridad(id) {
-            // Aquí puedes implementar la lógica para editar personal de seguridad
-            console.log('Editar seguridad ID:', id);
-        }
+<!-- Mantener todos los modales existentes -->
+<!-- Modal: Nuevo Usuario -->
+<div class="modal fade" id="modalNuevoUsuario" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-plus me-2"></i>Nuevo Usuario
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('admin.crear_usuario') }}">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-user me-1"></i>Nombre Completo
+                                </label>
+                                <input type="text" class="form-control" name="nombre" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-envelope me-1"></i>Email
+                                </label>
+                                <input type="email" class="form-control" name="email" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-id-card me-1"></i>Código
+                                </label>
+                                <input type="text" class="form-control" name="codigo" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-user-tag me-1"></i>Rol
+                                </label>
+                                <select class="form-select" name="rol" required>
+                                    <option value="">Selecciona un rol</option>
+                                    <option value="estudiante">Estudiante</option>
+                                    <option value="docente">Docente</option>
+                                    <option value="administrativo">Administrativo</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Crear Usuario
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
-        function eliminarSeguridad(id) {
-            if (confirm('¿Está seguro de que desea eliminar este personal de seguridad?')) {
-                window.location.href = `/admin/usuarios-seguridad/${id}/eliminar`;
-            }
+<!-- Modal: Nuevo Administrador -->
+<div class="modal fade" id="modalNuevoAdmin" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-shield me-2"></i>Nuevo Administrador
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('admin.crear_administrador') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-user me-1"></i>Nombre
+                        </label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-envelope me-1"></i>Email
+                        </label>
+                        <input type="email" class="form-control" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-lock me-1"></i>Contraseña
+                        </label>
+                        <input type="password" class="form-control" name="password" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-save me-2"></i>Crear Administrador
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Nuevo Personal de Seguridad -->
+<div class="modal fade" id="modalNuevoSeguridad" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-shield-alt me-2"></i>Nuevo Personal de Seguridad
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('admin.crear_usuario_seguridad') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-user me-1"></i>Nombre
+                        </label>
+                        <input type="text" class="form-control" name="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-envelope me-1"></i>Email
+                        </label>
+                        <input type="email" class="form-control" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-lock me-1"></i>Contraseña
+                        </label>
+                        <input type="password" class="form-control" name="password" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save me-2"></i>Crear Personal
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script>
+    function editarUsuario(id) {
+        console.log('Editar usuario ID:', id);
+        // Implementar lógica de edición
+    }
+
+    function eliminarUsuario(id) {
+        if (confirm('¿Está seguro de que desea eliminar este usuario?')) {
+            window.location.href = `/admin/usuarios/${id}/eliminar`;
         }
-    </script>
-</body>
-</html>
+    }
+
+    function editarAdmin(id) {
+        console.log('Editar admin ID:', id);
+        // Implementar lógica de edición
+    }
+
+    function eliminarAdmin(id) {
+        if (confirm('¿Está seguro de que desea eliminar este administrador?')) {
+            window.location.href = `/admin/administradores/${id}/eliminar`;
+        }
+    }
+
+    function editarSeguridad(id) {
+        console.log('Editar seguridad ID:', id);
+        // Implementar lógica de edición
+    }
+
+    function eliminarSeguridad(id) {
+        if (confirm('¿Está seguro de que desea eliminar este personal de seguridad?')) {
+            window.location.href = `/admin/usuarios-seguridad/${id}/eliminar`;
+        }
+    }
+</script>
+{% endblock %}

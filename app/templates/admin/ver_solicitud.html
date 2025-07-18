@@ -1,333 +1,313 @@
-{% extends "admin/dashboard.html" %}
+{% extends "admin/base.html" %}
 
 {% block title %}Solicitud #{{ solicitud.id }} - Panel Administrativo{% endblock %}
 
-{% block content %}
-<div class="admin-theme">
-    <!-- Header -->
-    <div class="admin-header">
-        <div class="container">
-            <div class="row align-items-center">
+{% set active_page = 'solicitudes' %}
+{% set page_title = 'Solicitud #' ~ solicitud.id %}
+{% set page_icon = 'file-alt' %}
+{% set page_description = 'Detalles de la solicitud de pase vehicular' %}
+{% set show_back_button = true %}
+
+{% block page_content %}
+<div class="row">
+    <!-- Información principal -->
+    <div class="col-md-8">
+        <div class="admin-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Información de la Solicitud
+                </h3>
+                <span class="badge 
+                    {% if solicitud.estado == 'pendiente' %}bg-warning text-dark
+                    {% elif solicitud.estado == 'aprobada' %}bg-success
+                    {% elif solicitud.estado == 'rechazada' %}bg-danger
+                    {% else %}bg-secondary{% endif %} fs-6">
+                    {{ solicitud.estado|title }}
+                </span>
+            </div>
+
+            <div class="row mb-4">
                 <div class="col-md-6">
-                    <h1 class="mb-0">
-                        <i class="fas fa-file-alt me-2"></i>
-                        Solicitud #{{ solicitud.id }}
-                    </h1>
-                    <p class="mb-0 mt-2 opacity-75">
-                        Detalles de la solicitud de pase vehicular
-                    </p>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tipo de Pase</label>
+                        <div class="form-control-plaintext">
+                            <span class="badge {% if solicitud.tipo_pase == 'ciclo' %}bg-primary{% else %}bg-info{% endif %}">
+                                {{ solicitud.tipo_pase|title }}
+                            </span>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-6 text-end">
-                    <a href="{{ url_for('admin.solicitudes') }}" class="btn btn-light">
-                        <i class="fas fa-arrow-left me-2"></i>Volver a Solicitudes
-                    </a>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Fecha de Solicitud</label>
+                        <div class="form-control-plaintext">
+                            {{ solicitud.fecha_solicitud.strftime('%d/%m/%Y %H:%M') }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if solicitud.ciclo %}
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Ciclo Académico</label>
+                        <div class="form-control-plaintext">
+                            {{ solicitud.ciclo.nombre }}
+                            <small class="text-muted">
+                                ({{ solicitud.ciclo.fecha_inicio.strftime('%d/%m/%Y') }} - 
+                                 {{ solicitud.ciclo.fecha_fin.strftime('%d/%m/%Y') }})
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if solicitud.estado != 'pendiente' and solicitud.comentarios_admin %}
+            <div class="mb-4">
+                <label class="form-label fw-bold">Comentarios del Administrador</label>
+                <div class="form-control-plaintext">
+                    {{ solicitud.comentarios_admin }}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if solicitud.fecha_revision %}
+            <div class="mb-4">
+                <label class="form-label fw-bold">Fecha de Revisión</label>
+                <div class="form-control-plaintext">
+                    {{ solicitud.fecha_revision.strftime('%d/%m/%Y %H:%M') }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Información del solicitante -->
+        <div class="admin-card">
+            <h4 class="mb-3">
+                <i class="fas fa-user me-2"></i>Información del Solicitante
+            </h4>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nombre</label>
+                        <div class="form-control-plaintext">
+                            {{ solicitud.usuario.nombre }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Rol</label>
+                        <div class="form-control-plaintext">
+                            <span class="badge {% if solicitud.usuario.rol == 'estudiante' %}bg-primary{% else %}bg-success{% endif %}">
+                                {{ solicitud.usuario.rol|title }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">DNI</label>
+                        <div class="form-control-plaintext">
+                            {{ solicitud.usuario.dni }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Email</label>
+                        <div class="form-control-plaintext">
+                            {{ solicitud.usuario.email or 'No registrado' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% if solicitud.usuario.codigo_universitario %}
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Código Universitario</label>
+                        <div class="form-control-plaintext">
+                            {{ solicitud.usuario.codigo_universitario }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Teléfono</label>
+                        <div class="form-control-plaintext">
+                            {{ solicitud.usuario.telefono or 'No registrado' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Información del vehículo -->
+        <div class="admin-card">
+            <h4 class="mb-3">
+                <i class="fas fa-car me-2"></i>Información del Vehículo
+            </h4>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Placa</label>
+                        <div class="form-control-plaintext">
+                            <span class="badge bg-dark fs-6">{{ solicitud.vehiculo.placa }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tipo</label>
+                        <div class="form-control-plaintext">
+                            {{ solicitud.vehiculo.tipo }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Marca</label>
+                        <div class="form-control-plaintext">
+                            {{ solicitud.vehiculo.marca }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Modelo</label>
+                        <div class="form-control-plaintext">
+                            {{ solicitud.vehiculo.modelo }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Color</label>
+                        <div class="form-control-plaintext">
+                            {{ solicitud.vehiculo.color }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Año</label>
+                        <div class="form-control-plaintext">
+                            {{ solicitud.vehiculo.year or 'No especificado' }}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="container">
-        <div class="row">
-            <!-- Información principal -->
-            <div class="col-md-8">
-                <div class="admin-card">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3 class="mb-0">
-                            <i class="fas fa-info-circle me-2"></i>Información de la Solicitud
-                        </h3>
-                        <span class="badge 
-                            {% if solicitud.estado == 'pendiente' %}bg-warning text-dark
-                            {% elif solicitud.estado == 'aprobado' %}bg-success
-                            {% elif solicitud.estado == 'rechazado' %}bg-danger
-                            {% else %}bg-secondary{% endif %} fs-6">
-                            {{ solicitud.estado|title }}
-                        </span>
-                    </div>
-
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Tipo de Pase</label>
-                                <div class="form-control-plaintext">
-                                    <span class="badge {% if solicitud.tipo_pase == 'ciclo' %}bg-primary{% else %}bg-info{% endif %}">
-                                        {{ solicitud.tipo_pase|title }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Fecha de Solicitud</label>
-                                <div class="form-control-plaintext">
-                                    {{ solicitud.fecha_solicitud.strftime('%d/%m/%Y %H:%M') }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {% if solicitud.ciclo %}
-                    <div class="row mb-4">
-                        <div class="col-md-12">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Ciclo Académico</label>
-                                <div class="form-control-plaintext">
-                                    {{ solicitud.ciclo.nombre }}
-                                    <small class="text-muted">
-                                        ({{ solicitud.ciclo.fecha_inicio.strftime('%d/%m/%Y') }} - 
-                                         {{ solicitud.ciclo.fecha_fin.strftime('%d/%m/%Y') }})
-                                    </small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    {% if solicitud.estado != 'pendiente' and solicitud.comentarios_admin %}
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">Comentarios del Administrador</label>
-                        <div class="form-control-plaintext">
-                            {{ solicitud.comentarios_admin }}
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    {% if solicitud.fecha_revision %}
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">Fecha de Revisión</label>
-                        <div class="form-control-plaintext">
-                            {{ solicitud.fecha_revision.strftime('%d/%m/%Y %H:%M') }}
-                        </div>
-                    </div>
-                    {% endif %}
-                </div>
-
-                <!-- Información del solicitante -->
-                <div class="admin-card">
-                    <h4 class="mb-3">
-                        <i class="fas fa-user me-2"></i>Información del Solicitante
-                    </h4>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Nombre</label>
-                                <div class="form-control-plaintext">
-                                    {{ solicitud.usuario.nombre }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Rol</label>
-                                <div class="form-control-plaintext">
-                                    <span class="badge {% if solicitud.usuario.rol == 'estudiante' %}bg-primary{% else %}bg-success{% endif %}">
-                                        {{ solicitud.usuario.rol|title }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">DNI</label>
-                                <div class="form-control-plaintext">
-                                    {{ solicitud.usuario.dni }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Email</label>
-                                <div class="form-control-plaintext">
-                                    {{ solicitud.usuario.email or 'No registrado' }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% if solicitud.usuario.codigo_universitario %}
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Código Universitario</label>
-                                <div class="form-control-plaintext">
-                                    {{ solicitud.usuario.codigo_universitario }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Teléfono</label>
-                                <div class="form-control-plaintext">
-                                    {{ solicitud.usuario.telefono or 'No registrado' }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-                </div>
-
-                <!-- Información del vehículo -->
-                <div class="admin-card">
-                    <h4 class="mb-3">
-                        <i class="fas fa-car me-2"></i>Información del Vehículo
-                    </h4>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Placa</label>
-                                <div class="form-control-plaintext">
-                                    <span class="badge bg-dark fs-6">{{ solicitud.vehiculo.placa }}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Tipo</label>
-                                <div class="form-control-plaintext">
-                                    {{ solicitud.vehiculo.tipo }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Marca</label>
-                                <div class="form-control-plaintext">
-                                    {{ solicitud.vehiculo.marca }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Modelo</label>
-                                <div class="form-control-plaintext">
-                                    {{ solicitud.vehiculo.modelo }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Color</label>
-                                <div class="form-control-plaintext">
-                                    {{ solicitud.vehiculo.color }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Año</label>
-                                <div class="form-control-plaintext">
-                                    {{ solicitud.vehiculo.year or 'No especificado' }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <!-- Panel de acciones -->
+    <div class="col-md-4">
+        <div class="admin-card">
+            <h4 class="mb-3">
+                <i class="fas fa-cogs me-2"></i>Acciones
+            </h4>
+            
+            {% if solicitud.estado == 'pendiente' %}
+            <div class="d-grid gap-2">
+                <button class="btn btn-success" onclick="aprobarSolicitud({{ solicitud.id }})">
+                    <i class="fas fa-check me-2"></i>Aprobar Solicitud
+                </button>
+                <button class="btn btn-danger" onclick="rechazarSolicitud({{ solicitud.id }})">
+                    <i class="fas fa-times me-2"></i>Rechazar Solicitud
+                </button>
             </div>
+            {% elif solicitud.estado == 'aprobada' %}
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle me-2"></i>
+                Solicitud aprobada
+                {% if solicitud.pase_vehicular %}
+                <hr>
+                <a href="{{ url_for('admin.ver_pase', id=solicitud.pase_vehicular.id) }}" class="btn btn-sm btn-success">
+                    Ver Pase Generado
+                </a>
+                {% endif %}
+            </div>
+            {% elif solicitud.estado == 'rechazada' %}
+            <div class="alert alert-danger">
+                <i class="fas fa-times-circle me-2"></i>
+                Solicitud rechazada
+            </div>
+            {% endif %}
+        </div>
 
-            <!-- Panel de acciones -->
-            <div class="col-md-4">
-                <div class="admin-card">
-                    <h4 class="mb-3">
-                        <i class="fas fa-cogs me-2"></i>Acciones
-                    </h4>
-                    
-                    {% if solicitud.estado == 'pendiente' %}
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-success" onclick="aprobarSolicitud({{ solicitud.id }})">
-                            <i class="fas fa-check me-2"></i>Aprobar Solicitud
-                        </button>
-                        <button class="btn btn-danger" onclick="rechazarSolicitud({{ solicitud.id }})">
-                            <i class="fas fa-times me-2"></i>Rechazar Solicitud
-                        </button>
-                    </div>
-                    {% elif solicitud.estado == 'aprobado' %}
-                    <div class="alert alert-success">
-                        <i class="fas fa-check-circle me-2"></i>
-                        Solicitud aprobada
-                        {% if solicitud.pase_vehicular %}
-                        <hr>
-                        <a href="{{ url_for('admin.ver_pase', id=solicitud.pase_vehicular.id) }}" class="btn btn-sm btn-success">
-                            Ver Pase Generado
-                        </a>
-                        {% endif %}
-                    </div>
-                    {% elif solicitud.estado == 'rechazado' %}
-                    <div class="alert alert-danger">
-                        <i class="fas fa-times-circle me-2"></i>
-                        Solicitud rechazada
-                    </div>
-                    {% endif %}
-                </div>
-
-                <!-- Historial de estados -->
-                <div class="admin-card">
-                    <h4 class="mb-3">
-                        <i class="fas fa-history me-2"></i>Historial
-                    </h4>
-                    <div class="timeline">
-                        <div class="timeline-item active">
-                            <div class="timeline-marker bg-primary"></div>
-                            <div class="timeline-content">
-                                <h6 class="mb-1">Solicitud creada</h6>
-                                <small class="text-muted">{{ solicitud.fecha_solicitud.strftime('%d/%m/%Y %H:%M') }}</small>
-                            </div>
-                        </div>
-                        
-                        {% if solicitud.estado != 'pendiente' and solicitud.fecha_revision %}
-                        <div class="timeline-item active">
-                            <div class="timeline-marker 
-                                {% if solicitud.estado == 'aprobado' %}bg-success
-                                {% elif solicitud.estado == 'rechazado' %}bg-danger
-                                {% else %}bg-secondary{% endif %}"></div>
-                            <div class="timeline-content">
-                                <h6 class="mb-1">Solicitud {{ solicitud.estado }}</h6>
-                                <small class="text-muted">{{ solicitud.fecha_revision.strftime('%d/%m/%Y %H:%M') }}</small>
-                            </div>
-                        </div>
-                        {% endif %}
-
-                        {% if solicitud.pase_vehicular %}
-                        <div class="timeline-item active">
-                            <div class="timeline-marker bg-info"></div>
-                            <div class="timeline-content">
-                                <h6 class="mb-1">Pase generado</h6>
-                                <small class="text-muted">{{ solicitud.pase_vehicular.fecha_emision.strftime('%d/%m/%Y %H:%M') }}</small>
-                            </div>
-                        </div>
-                        {% endif %}
+        <!-- Historial de estados -->
+        <div class="admin-card">
+            <h4 class="mb-3">
+                <i class="fas fa-history me-2"></i>Historial
+            </h4>
+            <div class="custom-timeline">
+                <div class="timeline-item">
+                    <div class="timeline-marker timeline-marker-primary"></div>
+                    <div class="timeline-content">
+                        <h6 class="timeline-title">Solicitud creada</h6>
+                        <p class="timeline-date">{{ solicitud.fecha_solicitud.strftime('%d/%m/%Y %H:%M') }}</p>
                     </div>
                 </div>
-
-                <!-- Información adicional -->
-                <div class="admin-card">
-                    <h4 class="mb-3">
-                        <i class="fas fa-info-circle me-2"></i>Información Adicional
-                    </h4>
-                    <div class="small">
-                        <div class="mb-2">
-                            <strong>Tipo de solicitud:</strong> 
-                            {{ solicitud.tipo_pase|title }}
-                        </div>
-                        <div class="mb-2">
-                            <strong>Tipo de usuario:</strong> 
-                            {{ solicitud.usuario.rol|title }}
-                        </div>
-                        <div class="mb-2">
-                            <strong>Tipo de vehículo:</strong> 
-                            {{ solicitud.vehiculo.tipo }}
-                        </div>
-                        {% if solicitud.ciclo %}
-                        <div class="mb-2">
-                            <strong>Ciclo académico:</strong> 
-                            {{ solicitud.ciclo.nombre }}
-                        </div>
-                        {% endif %}
+                
+                {% if solicitud.estado != 'pendiente' and solicitud.fecha_revision %}
+                <div class="timeline-item">
+                    <div class="timeline-marker 
+                        {% if solicitud.estado == 'aprobada' %}timeline-marker-success
+                        {% elif solicitud.estado == 'rechazada' %}timeline-marker-danger
+                        {% else %}timeline-marker-secondary{% endif %}"></div>
+                    <div class="timeline-content">
+                        <h6 class="timeline-title">Solicitud {{ solicitud.estado }}</h6>
+                        <p class="timeline-date">{{ solicitud.fecha_revision.strftime('%d/%m/%Y %H:%M') }}</p>
                     </div>
                 </div>
+                {% endif %}
+
+                {% if solicitud.pase_vehicular %}
+                <div class="timeline-item">
+                    <div class="timeline-marker timeline-marker-info"></div>
+                    <div class="timeline-content">
+                        <h6 class="timeline-title">Pase generado</h6>
+                        <p class="timeline-date">{{ solicitud.pase_vehicular.fecha_emision.strftime('%d/%m/%Y %H:%M') }}</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Información adicional -->
+        <div class="admin-card">
+            <h4 class="mb-3">
+                <i class="fas fa-info-circle me-2"></i>Información Adicional
+            </h4>
+            <div class="info-list">
+                <div class="info-item">
+                    <strong>Tipo de solicitud:</strong> 
+                    <span class="info-value">{{ solicitud.tipo_pase|title }}</span>
+                </div>
+                <div class="info-item">
+                    <strong>Tipo de usuario:</strong> 
+                    <span class="info-value">{{ solicitud.usuario.rol|title }}</span>
+                </div>
+                <div class="info-item">
+                    <strong>Tipo de vehículo:</strong> 
+                    <span class="info-value">{{ solicitud.vehiculo.tipo }}</span>
+                </div>
+                {% if solicitud.ciclo %}
+                <div class="info-item">
+                    <strong>Ciclo académico:</strong> 
+                    <span class="info-value">{{ solicitud.ciclo.nombre }}</span>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -337,11 +317,11 @@
 <div class="modal fade" id="aprobarModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header bg-success text-white">
                 <h5 class="modal-title">
                     <i class="fas fa-check me-2"></i>Aprobar Solicitud #{{ solicitud.id }}
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form id="aprobarForm" method="POST">
                 <div class="modal-body">
@@ -370,11 +350,11 @@
 <div class="modal fade" id="rechazarModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header bg-danger text-white">
                 <h5 class="modal-title">
                     <i class="fas fa-times me-2"></i>Rechazar Solicitud #{{ solicitud.id }}
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form id="rechazarForm" method="POST">
                 <div class="modal-body">
@@ -403,52 +383,186 @@
 {% block extra_css %}
 {{ super() }}
 <style>
-    .timeline {
+    /* Timeline personalizado */
+    .custom-timeline {
         position: relative;
-        padding-left: 3rem;
+        padding-left: 2rem;
+        margin-top: 1rem;
     }
     
-    .timeline::before {
+    .custom-timeline::before {
         content: '';
         position: absolute;
-        left: 1rem;
+        left: 0.75rem;
         top: 0;
         bottom: 0;
         width: 2px;
-        background: #e9ecef;
+        background: linear-gradient(to bottom, #e9ecef 0%, #dee2e6 100%);
     }
     
     .timeline-item {
         position: relative;
-        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .timeline-item:last-child {
+        padding-bottom: 0;
+        margin-bottom: 0;
     }
     
     .timeline-marker {
         position: absolute;
-        left: -2rem;
+        left: -1.75rem;
+        top: 0.25rem;
         width: 1rem;
         height: 1rem;
         border-radius: 50%;
         border: 2px solid #fff;
-        box-shadow: 0 0 0 2px #e9ecef;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     
-    .timeline-item.active .timeline-marker {
-        box-shadow: 0 0 0 2px var(--primary-color);
+    .timeline-marker-primary {
+        background-color: #007bff;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.3);
+    }
+    
+    .timeline-marker-success {
+        background-color: #28a745;
+        box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.3);
+    }
+    
+    .timeline-marker-danger {
+        background-color: #dc3545;
+        box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.3);
+    }
+    
+    .timeline-marker-info {
+        background-color: #17a2b8;
+        box-shadow: 0 0 0 3px rgba(23, 162, 184, 0.3);
+    }
+    
+    .timeline-marker-secondary {
+        background-color: #6c757d;
+        box-shadow: 0 0 0 3px rgba(108, 117, 125, 0.3);
     }
     
     .timeline-content {
-        padding: 0.5rem 0;
+        margin-left: 0.5rem;
+        padding-top: 0.1rem;
     }
     
-    .timeline-content h6 {
-        margin-bottom: 0.25rem;
+    .timeline-title {
+        font-size: 0.95rem;
+        font-weight: 600;
         color: #495057;
+        margin-bottom: 0.25rem;
+        line-height: 1.2;
+    }
+    
+    .timeline-date {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-bottom: 0;
+        line-height: 1.1;
+    }
+    
+    /* Lista de información adicional */
+    .info-list {
+        font-size: 0.9rem;
+    }
+    
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f8f9fa;
+    }
+    
+    .info-item:last-child {
+        border-bottom: none;
+    }
+    
+    .info-item strong {
+        color: #495057;
+        font-weight: 600;
+        flex-shrink: 0;
+        margin-right: 0.5rem;
+    }
+    
+    .info-value {
+        color: #6c757d;
+        text-align: right;
+        font-weight: 500;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .custom-timeline {
+            padding-left: 1.5rem;
+        }
+        
+        .timeline-marker {
+            left: -1.5rem;
+            width: 0.8rem;
+            height: 0.8rem;
+        }
+        
+        .timeline-content {
+            margin-left: 0.3rem;
+        }
+        
+        .timeline-title {
+            font-size: 0.9rem;
+        }
+        
+        .timeline-date {
+            font-size: 0.75rem;
+        }
+        
+        .info-item {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .info-value {
+            text-align: left;
+            margin-top: 0.25rem;
+        }
+    }
+    
+    /* Animaciones */
+    .timeline-item {
+        animation: fadeInUp 0.3s ease-out;
+    }
+    
+    .timeline-item:nth-child(2) {
+        animation-delay: 0.1s;
+    }
+    
+    .timeline-item:nth-child(3) {
+        animation-delay: 0.2s;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 </style>
 {% endblock %}
 
 {% block extra_js %}
+{{ super() }}
 <script>
 function aprobarSolicitud(solicitudId) {
     const form = document.getElementById('aprobarForm');
