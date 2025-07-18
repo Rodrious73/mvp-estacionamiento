@@ -81,8 +81,15 @@ def solicitar_pase():
                 ).first()
                 
                 if solicitud_existente:
-                    flash('Ya tienes una solicitud para este vehículo en el ciclo actual', 'error')
-                    return redirect(url_for('estudiante.solicitar_pase'))
+                    # Si la solicitud está pendiente, no permitir nueva solicitud
+                    if solicitud_existente.estado == 'pendiente':
+                        flash('Ya tienes una solicitud pendiente para este vehículo en el ciclo actual', 'error')
+                        return redirect(url_for('estudiante.solicitar_pase'))
+                    
+                    # Si la solicitud fue aprobada, no permitir nueva solicitud
+                    elif solicitud_existente.estado == 'aprobado':
+                        flash('Ya tienes una solicitud aprobada para este vehículo en el ciclo actual', 'error')
+                        return redirect(url_for('estudiante.solicitar_pase'))
             
             # Validar fechas para pases temporales
             if tipo_pase == 'temporal':

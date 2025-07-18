@@ -121,7 +121,7 @@ def aprobar_solicitud(id):
         flash('Esta solicitud ya ha sido procesada', 'error')
         return redirect(url_for('admin.ver_solicitud', id=id))
     
-    comentarios = request.form.get('comentarios', '')
+    comentarios = request.form.get('comentarios_admin', '')
     
     try:
         # Aprobar la solicitud
@@ -175,7 +175,7 @@ def rechazar_solicitud(id):
         flash('Esta solicitud ya ha sido procesada', 'error')
         return redirect(url_for('admin.ver_solicitud', id=id))
     
-    comentarios = request.form.get('comentarios', '')
+    comentarios = request.form.get('comentarios_admin', '')
     
     if not comentarios:
         flash('Debe proporcionar un motivo para rechazar la solicitud', 'error')

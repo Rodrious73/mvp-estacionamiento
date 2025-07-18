@@ -297,7 +297,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Motivo del rechazo <span class="text-danger">*</span></label>
-                        <textarea name="motivo" class="form-control" rows="3" required
+                        <textarea name="comentarios" class="form-control" rows="3" required
                                   placeholder="Explique el motivo del rechazo..."></textarea>
                     </div>
                 </div>
@@ -324,10 +324,20 @@ function aprobarSolicitud(solicitudId) {
 
 function rechazarSolicitud(solicitudId) {
     const form = document.getElementById('rechazarForm');
+    console.log(form);
     form.action = `/admin/solicitud/${solicitudId}/rechazar`;
     const modal = new bootstrap.Modal(document.getElementById('rechazarModal'));
     modal.show();
 }
+
+document.getElementById('rechazarForm').addEventListener('submit', function(e) {
+    const comentarios = document.querySelector('textarea[name="comentarios"]').value.trim();
+    if (!comentarios) {
+        e.preventDefault();
+        alert('Debe proporcionar un motivo para rechazar la solicitud');
+        return false;
+    }
+});
 
 // Actualizar automáticamente cada 30 segundos
 setInterval(function() {

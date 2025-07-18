@@ -265,7 +265,7 @@
                         <div class="detail-content">
                             <h6 class="mb-3">Pase Generado</h6>
                             <div class="d-flex gap-2">
-                                <a href="{{ url_for('docente.ver_pase', id=solicitud.pase_vehicular.id) }}" class="btn btn-primary">
+                                <a href="{{ url_for('estudiante.ver_pase', id=solicitud.pase_vehicular.id) }}" class="btn btn-primary">
                                     <i class="fas fa-qrcode me-2"></i>
                                     Ver Pase QR
                                 </a>
@@ -323,19 +323,19 @@
                     <div class="detail-content">
                         <div class="info-row">
                             <div class="info-label">Nombre:</div>
-                            <div class="info-value">{{ solicitud.solicitante.nombre }}</div>
+                            <div class="info-value">{{ solicitud.usuario.nombre }}</div>
                         </div>
                         <div class="info-row">
                             <div class="info-label">Código:</div>
-                            <div class="info-value">{{ solicitud.solicitante.codigo_universitario }}</div>
+                            <div class="info-value">{{ solicitud.usuario.codigo_universitario }}</div>
                         </div>
                         <div class="info-row">
                             <div class="info-label">DNI:</div>
-                            <div class="info-value">{{ solicitud.solicitante.dni }}</div>
+                            <div class="info-value">{{ solicitud.usuario.dni }}</div>
                         </div>
                         <div class="info-row">
                             <div class="info-label">Rol:</div>
-                            <div class="info-value">{{ solicitud.solicitante.rol.title() }}</div>
+                            <div class="info-value">{{ solicitud.usuario.rol.title() }}</div>
                         </div>
                     </div>
                 </div>
