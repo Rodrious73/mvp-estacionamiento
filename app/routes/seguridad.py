@@ -193,6 +193,26 @@ def validar_codigo_ajax():
     if not pase.esta_vigente():
         return jsonify({'valido': False, 'mensaje': 'El pase ha expirado o no está vigente'})
     
+    # Verificar si ya tiene un estacionamiento asignado
+    estacionamiento_actual = Estacionamiento.obtener_por_pase(pase.id)
+    
+    # Determinar si es entrada o salida
+    es_entrada = estacionamiento_actual is None
+    
+    # Obtener espacios disponibles si es entrada
+    espacios_disponibles = []
+    if es_entrada:
+        espacios_db = Estacionamiento.query.filter_by(estado='disponible').order_by(Estacionamiento.numero).all()
+        espacios_disponibles = [{'numero': e.numero, 'id': e.id} for e in espacios_db]
+    
+    # Información del estacionamiento actual si es salida
+    estacionamiento_info = None
+    if estacionamiento_actual:
+        estacionamiento_info = {
+            'numero': estacionamiento_actual.numero,
+            'fecha_asignacion': estacionamiento_actual.fecha_asignacion.strftime('%d/%m/%Y %H:%M') if estacionamiento_actual.fecha_asignacion else None
+        }
+    
     return jsonify({
         'valido': True,
         'pase_id': pase.id,
@@ -202,7 +222,10 @@ def validar_codigo_ajax():
         'modelo': pase.vehiculo.modelo,
         'tipo': pase.tipo_pase,
         'estado': pase.estado,
-        'fecha_fin': pase.fecha_fin.strftime('%d/%m/%Y')
+        'fecha_fin': pase.fecha_fin.strftime('%d/%m/%Y'),
+        'es_entrada': es_entrada,
+        'espacios_disponibles': espacios_disponibles,
+        'estacionamiento_actual': estacionamiento_info
     })
 
 @seguridad_bp.route('/registrar-acceso', methods=['POST'])
@@ -235,6 +258,61 @@ def registrar_acceso():
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'mensaje': f'Error al registrar acceso: {str(e)}'})
+
+@seguridad_bp.route('/registrar-entrada-con-espacio-especifico', methods=['POST'])
+@login_required
+@security_required
+def registrar_entrada_con_espacio_especifico():
+    """Registrar entrada con espacio específico seleccionado"""
+    data = request.get_json()
+    pase_id = data.get('pase_id')
+    espacio_numero = data.get('espacio_numero')
+    
+    if not pase_id or not espacio_numero:
+        return jsonify({'success': False, 'mensaje': 'Faltan datos requeridos'})
+    
+    try:
+        # Verificar que el pase existe
+        pase = PaseVehicular.query.get(pase_id)
+        if not pase:
+            return jsonify({'success': False, 'mensaje': 'Pase no encontrado'})
+        
+        # Verificar que no tenga ya un estacionamiento asignado
+        estacionamiento_actual = Estacionamiento.obtener_por_pase(pase_id)
+        if estacionamiento_actual:
+            return jsonify({'success': False, 'mensaje': f'El vehículo ya tiene asignado el espacio {estacionamiento_actual.numero}'})
+        
+        # Obtener el espacio específico
+        estacionamiento = Estacionamiento.query.filter_by(numero=espacio_numero).first()
+        if not estacionamiento:
+            return jsonify({'success': False, 'mensaje': 'Espacio no encontrado'})
+        
+        if estacionamiento.estado != 'disponible':
+            return jsonify({'success': False, 'mensaje': f'El espacio {espacio_numero} no está disponible'})
+        
+        # Asignar estacionamiento
+        if not estacionamiento.asignar(pase_id, f'Asignación manual por entrada - Espacio {espacio_numero}'):
+            return jsonify({'success': False, 'mensaje': 'Error al asignar el estacionamiento'})
+        
+        # Registrar acceso
+        acceso = RegistroAcceso.registrar_acceso(
+            pase_id=pase_id,
+            permitido=True,
+            usuario_seguridad_id=session.get('user_id'),
+            observaciones=f'Entrada - Espacio {espacio_numero} asignado manualmente'
+        )
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'mensaje': 'Entrada registrada y estacionamiento asignado correctamente',
+            'espacio_asignado': espacio_numero
+        })
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'mensaje': f'Error al procesar entrada: {str(e)}'})
 
 @seguridad_bp.route('/asignar-espacio', methods=['POST'])
 @login_required
