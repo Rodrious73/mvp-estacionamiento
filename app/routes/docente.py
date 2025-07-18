@@ -172,7 +172,7 @@ def vehiculos():
                 vehiculo.modelo = modelo
                 vehiculo.tipo = tipo
                 vehiculo.color = color
-                vehiculo.año = int(year) if year else None
+                vehiculo.year= int(year) if year else None
                 
                 flash('Vehículo actualizado correctamente', 'success')
             else:  # Crear nuevo vehículo
@@ -182,7 +182,7 @@ def vehiculos():
                     modelo=modelo,
                     tipo=tipo,
                     color=color,
-                    año=int(year) if year else None,
+                    year=int(year) if year else None,
                     usuario_id=user['id']
                 )
                 
