@@ -63,11 +63,7 @@ def login():
                     if usuario.rol == 'estudiante':
                         return redirect(url_for('estudiante.dashboard'))
                     elif usuario.rol == 'docente':
-                        # Verificar si es el administrador especial
-                        if usuario.codigo_universitario == 'ADMIN001':
-                            return redirect(url_for('admin.dashboard'))
-                        else:
-                            return redirect(url_for('docente.dashboard'))
+                        return redirect(url_for('docente.dashboard'))
                     elif usuario.rol == 'visita':
                         return redirect(url_for('visitante.dashboard'))
                     elif usuario.rol == 'administrador':
