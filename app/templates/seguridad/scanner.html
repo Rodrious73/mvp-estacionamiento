@@ -513,19 +513,43 @@
                 let buttonSection = '';
 
                 if (data.es_entrada) {
-                    // Es entrada - mostrar espacios disponibles
-                    if (data.espacios_disponibles.length > 0) {
-                        let espaciosOptions = data.espacios_disponibles.map(espacio =>
-                            `<option value="${espacio.numero}">Espacio ${espacio.numero}</option>`
-                        ).join('');
-
+                    // ENTRADA
+                    if (data.es_pase_temporal) {
+                        // PASE TEMPORAL (VISITA) - Espacio ya reservado
                         buttonSection = `
-                        <div class="mt-3">
-                            <h6><i class="fas fa-sign-in-alt me-2 text-success"></i>Entrada - Seleccionar Espacio:</h6>
+                    <div class="mt-3 entrance-section p-3 rounded">
+                        <h6><i class="fas fa-user-clock me-2 text-primary"></i>Pase Temporal - Espacio Reservado</h6>
+                        <div class="alert alert-info">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <strong><i class="fas fa-parking me-2"></i>Espacio Reservado: ${data.espacio_reservado}</strong>
+                                    <p class="mb-0 small text-muted mt-1">${data.mensaje_especial}</p>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <span class="badge bg-primary fs-6">RESERVADO</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-success w-100" onclick="registrarEntradaPaseTemporal('${data.pase_id}')">
+                            <i class="fas fa-sign-in-alt me-2"></i>Confirmar Entrada - Espacio ${data.espacio_reservado}
+                        </button>
+                    </div>
+                `;
+                    } else {
+                        // PASE DE CICLO ACADÉMICO - Seleccionar espacio
+                        if (data.espacios_disponibles && data.espacios_disponibles.length > 0) {
+                            let espaciosOptions = data.espacios_disponibles.map(espacio =>
+                                `<option value="${espacio.numero}">Espacio ${espacio.numero}</option>`
+                            ).join('');
+
+                            buttonSection = `
+                        <div class="mt-3 entrance-section p-3 rounded">
+                            <h6><i class="fas fa-graduation-cap me-2 text-success"></i>Pase de Ciclo Académico - Seleccionar Espacio</h6>
+                            <p class="small text-muted">${data.mensaje_especial}</p>
                             <div class="row">
                                 <div class="col-md-8">
                                     <select class="form-select" id="espacio-selector" required>
-                                        <option value="">Selecciona un espacio...</option>
+                                        <option value="">Selecciona un espacio disponible...</option>
                                         ${espaciosOptions}
                                     </select>
                                 </div>
@@ -543,8 +567,8 @@
                             </div>
                         </div>
                     `;
-                    } else {
-                        buttonSection = `
+                        } else {
+                            buttonSection = `
                         <div class="mt-3">
                             <div class="alert alert-warning">
                                 <i class="fas fa-exclamation-triangle me-2"></i>
@@ -553,73 +577,107 @@
                             </div>
                         </div>
                     `;
+                        }
                     }
                 } else {
-                    // Es salida - mostrar información del estacionamiento actual
+                    // SALIDA - Independiente del tipo de pase
                     const estacionamientoInfo = data.estacionamiento_actual;
+                    const tipoPaseTexto = data.es_pase_temporal ? 'Temporal' : 'Ciclo Académico';
+
                     buttonSection = `
-                    <div class="mt-3">
-                        <h6><i class="fas fa-sign-out-alt me-2 text-danger"></i>Salida - Información del Estacionamiento:</h6>
-                        <div class="alert alert-info">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <strong>Espacio actual:</strong> ${estacionamientoInfo.numero}
-                                </div>
-                                <div class="col-md-6">
-                                    <strong>Entrada:</strong> ${estacionamientoInfo.fecha_asignacion || 'No registrada'}
-                                </div>
+                <div class="mt-3 exit-section p-3 rounded">
+                    <h6><i class="fas fa-sign-out-alt me-2 text-danger"></i>Salida - Pase ${tipoPaseTexto}</h6>
+                    <div class="alert alert-info">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Espacio actual:</strong> ${estacionamientoInfo.numero}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Entrada:</strong> ${estacionamientoInfo.fecha_asignacion || 'No registrada'}
                             </div>
                         </div>
-                        <button class="btn btn-danger w-100" onclick="registrarSalida('${data.pase_id}')">
-                            <i class="fas fa-sign-out-alt me-2"></i>Registrar Salida y Liberar Espacio
-                        </button>
                     </div>
-                `;
+                    <button class="btn btn-danger w-100" onclick="registrarSalida('${data.pase_id}')">
+                        <i class="fas fa-sign-out-alt me-2"></i>Registrar Salida y Liberar Espacio
+                    </button>
+                </div>
+            `;
                 }
 
                 modalContent.innerHTML = `
-                <div class="alert alert-success">
-                    <i class="fas fa-check-circle me-2"></i>
-                    <strong>Pase Válido</strong>
-                </div>
-                
-                <div class="vehicle-info">
-                    <h5><i class="fas fa-user me-2"></i>${data.usuario}</h5>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <strong>Placa:</strong> ${data.placa}<br>
-                            <strong>Marca:</strong> ${data.marca}<br>
-                            <strong>Modelo:</strong> ${data.modelo}
-                        </div>
-                        <div class="col-md-6">
-                            <strong>Válido hasta:</strong> ${data.fecha_fin}<br>
-                            <strong>Tipo:</strong> ${data.tipo}<br>
-                            <strong>Estado:</strong> <span class="badge bg-success">${data.estado}</span>
-                        </div>
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle me-2"></i>
+                <strong>Pase Válido</strong>
+            </div>
+            
+            <div class="vehicle-info">
+                <h5><i class="fas fa-user me-2"></i>${data.usuario}</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Placa:</strong> ${data.placa}<br>
+                        <strong>Marca:</strong> ${data.marca}<br>
+                        <strong>Modelo:</strong> ${data.modelo}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Válido hasta:</strong> ${data.fecha_fin}<br>
+                        <strong>Tipo:</strong> <span class="badge bg-${data.es_pase_temporal ? 'primary' : 'success'}">${data.es_pase_temporal ? 'Temporal' : 'Ciclo Académico'}</span><br>
+                        <strong>Estado:</strong> <span class="badge bg-success">${data.estado}</span>
                     </div>
                 </div>
-                
-                <div class="mt-3">
-                    <div class="alert alert-${data.es_entrada ? 'success' : 'warning'} alert-sm">
-                        <i class="fas fa-${data.es_entrada ? 'arrow-right' : 'arrow-left'} me-2"></i>
-                        <strong>Tipo de acceso detectado: ${data.es_entrada ? 'ENTRADA' : 'SALIDA'}</strong>
-                    </div>
+            </div>
+            
+            <div class="mt-3">
+                <div class="alert alert-${data.es_entrada ? 'success' : 'warning'} alert-sm">
+                    <i class="fas fa-${data.es_entrada ? 'arrow-right' : 'arrow-left'} me-2"></i>
+                    <strong>Tipo de acceso detectado: ${data.es_entrada ? 'ENTRADA' : 'SALIDA'}</strong>
                 </div>
-                
-                ${buttonSection}
-            `;
+            </div>
+            
+            ${buttonSection}
+        `;
             } else {
                 modalContent.innerHTML = `
-                <div class="alert alert-danger">
-                    <i class="fas fa-times-circle me-2"></i>
-                    <strong>Pase Inválido</strong>
-                </div>
-                <p>${data.mensaje}</p>
-            `;
+            <div class="alert alert-danger">
+                <i class="fas fa-times-circle me-2"></i>
+                <strong>Pase Inválido</strong>
+            </div>
+            <p>${data.mensaje}</p>
+        `;
             }
 
             const modal = new bootstrap.Modal(document.getElementById('resultModal'));
             modal.show();
+        }
+
+        // Nueva función para pases temporales
+        function registrarEntradaPaseTemporal(paseId) {
+            fetch('/seguridad/registrar-entrada-pase-temporal', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    pase_id: paseId
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showSuccessMessage(`Entrada registrada correctamente.\nPase temporal - Espacio ${data.espacio_asignado}`);
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('resultModal'));
+                        modal.hide();
+
+                        setTimeout(() => {
+                            location.reload();
+                        }, 2000);
+                    } else {
+                        alert('Error: ' + data.mensaje);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al registrar la entrada temporal');
+                });
         }
 
         function registrarEntradaConEspacio(paseId) {

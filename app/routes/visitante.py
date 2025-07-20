@@ -233,9 +233,12 @@ def ver_pase(pase_id):
         flash('Pase no encontrado', 'error')
         return redirect(url_for('visitante.dashboard'))
     
+    estacionamiento_asignado = pase.obtener_estacionamiento_reservado()
+    
     return render_template('visitante/ver_pase.html', 
-                         user=user,
-                         pase=pase)
+                     user=user,
+                     pase=pase,
+                     estacionamiento_asignado=estacionamiento_asignado)
 
 @visitante_bp.route('/ver-solicitud/<int:solicitud_id>')
 @login_required

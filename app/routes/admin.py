@@ -1010,9 +1010,6 @@ def api_solicitud_info(solicitud_id):
 def api_estacionamientos_disponibles():
     """API para obtener estacionamientos disponibles"""
     try:
-        # Primero necesitas importar el modelo Estacionamiento
-        from app.models.estacionamiento import Estacionamiento
-        
         estacionamientos = Estacionamiento.query.filter_by(estado='disponible').all()
         
         data = []
@@ -1020,9 +1017,8 @@ def api_estacionamientos_disponibles():
             data.append({
                 'id': est.id,
                 'numero': est.numero,
-                'ubicacion': est.ubicacion,
                 'estado': est.estado,
-                'tipo': getattr(est, 'tipo', 'general')  # Usar getattr por si el atributo no existe
+                'observaciones': est.observaciones
             })
         
         return jsonify({
@@ -1033,3 +1029,82 @@ def api_estacionamientos_disponibles():
         
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
+
+@admin_bp.route('/pase/<int:id>/cambiar-espacio', methods=['POST'])
+@login_required
+@admin_required
+def cambiar_espacio_pase(id):
+    """Cambiar espacio reservado de un pase temporal"""
+    pase = PaseVehicular.query.get_or_404(id)
+    
+    if pase.tipo_pase != 'temporal':
+        flash('Solo se puede cambiar el espacio de pases temporales', 'error')
+        return redirect(url_for('admin.ver_pase', id=id))
+    
+    nuevo_estacionamiento_id = request.form.get('nuevo_estacionamiento_id')
+    motivo_cambio = request.form.get('motivo_cambio', '').strip()
+    
+    if not nuevo_estacionamiento_id or not motivo_cambio:
+        flash('Todos los campos son obligatorios', 'error')
+        return redirect(url_for('admin.ver_pase', id=id))
+    
+    try:
+        from app.models.estacionamiento import Estacionamiento
+        
+        # Verificar que el nuevo estacionamiento esté disponible
+        nuevo_estacionamiento = Estacionamiento.query.get_or_404(nuevo_estacionamiento_id)
+        
+        if nuevo_estacionamiento.estado != 'disponible':
+            flash('El espacio seleccionado no está disponible', 'error')
+            return redirect(url_for('admin.ver_pase', id=id))
+        
+        # Liberar espacio anterior si existe
+        if pase.estacionamiento_reservado:
+            pase.estacionamiento_reservado.estado = 'disponible'
+            pase.estacionamiento_reservado.pase_id = None
+        
+        # Asignar nuevo espacio
+        nuevo_estacionamiento.estado = 'reservado'
+        nuevo_estacionamiento.pase_id = pase.id
+        pase.estacionamiento_id = nuevo_estacionamiento.id
+        
+        # Agregar comentario sobre el cambio
+        comentario_anterior = pase.comentarios_admin or ''
+        nuevo_comentario = f"Espacio cambiado: {motivo_cambio}"
+        pase.comentarios_admin = f"{comentario_anterior}\n{nuevo_comentario}" if comentario_anterior else nuevo_comentario
+        
+        db.session.commit()
+        flash('Espacio reservado cambiado exitosamente', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al cambiar el espacio: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.ver_pase', id=id))
+
+@admin_bp.route('/pase/<int:id>/reactivar', methods=['GET'])
+@login_required
+@admin_required
+def reactivar_pase(id):
+    """Reactivar un pase revocado"""
+    pase = PaseVehicular.query.get_or_404(id)
+    
+    if pase.estado != 'revocado':
+        flash('Solo se pueden reactivar pases revocados', 'error')
+        return redirect(url_for('admin.ver_pase', id=id))
+    
+    try:
+        # Verificar que el pase no haya expirado
+        if pase.tipo_pase == 'temporal' and pase.fecha_fin < datetime.now().date():
+            flash('No se puede reactivar un pase temporal que ya expiró', 'error')
+            return redirect(url_for('admin.ver_pase', id=id))
+        
+        pase.estado = 'vigente'
+        db.session.commit()
+        flash('Pase reactivado exitosamente', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al reactivar el pase: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.ver_pase', id=id))

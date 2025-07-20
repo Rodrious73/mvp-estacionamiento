@@ -1,0 +1,577 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Pase #{{ pase.id }} - Panel Administrativo{% endblock %}
+
+{% set active_page = 'pases' %}
+{% set page_title = 'Pase #' ~ pase.id %}
+{% set page_icon = 'id-card' %}
+{% set page_description = 'Detalles del pase vehicular' %}
+{% set show_back_button = true %}
+
+{% block page_content %}
+<div class="row">
+    <!-- Información principal -->
+    <div class="col-md-8">
+        <div class="admin-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="mb-0">
+                    <i class="fas fa-id-card me-2"></i>Información del Pase
+                </h3>
+                <span class="badge 
+                    {% if pase.estado == 'vigente' %}bg-success
+                    {% elif pase.estado == 'expirado' %}bg-warning text-dark
+                    {% elif pase.estado == 'revocado' %}bg-danger
+                    {% else %}bg-secondary{% endif %} fs-6">
+                    {{ pase.estado|title }}
+                </span>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Código QR</label>
+                        <div class="form-control-plaintext">
+                            <code class="bg-light px-2 py-1 rounded">{{ pase.qr_code }}</code>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tipo de Pase</label>
+                        <div class="form-control-plaintext">
+                            <span class="badge {% if pase.tipo_pase == 'ciclo' %}bg-primary{% else %}bg-info{% endif %}">
+                                {{ pase.tipo_pase|title }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Fecha de Emisión</label>
+                        <div class="form-control-plaintext">
+                            {{ pase.fecha_emision.strftime('%d/%m/%Y %H:%M') }}
+                        </div>
+                    </div>
+                </div>
+                {% if pase.tipo_pase == 'temporal' %}
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Vigencia</label>
+                        <div class="form-control-plaintext">
+                            <i class="fas fa-calendar me-1"></i>
+                            {{ pase.fecha_inicio.strftime('%d/%m/%Y') }} - {{ pase.fecha_fin.strftime('%d/%m/%Y') }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if pase.tipo_pase == 'temporal' and pase.estacionamiento_reservado %}
+            <div class="alert alert-info">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-parking me-2"></i>
+                        <strong>Espacio Reservado:</strong> {{ pase.estacionamiento_reservado.numero }}
+                        <br>
+                        <small class="text-muted">
+                            Ubicación: {{ pase.estacionamiento_reservado.ubicacion or 'Sin especificar' }}
+                        </small>
+                    </div>
+                    {% if pase.estado == 'vigente' %}
+                    <button class="btn btn-sm btn-outline-primary" onclick="cambiarEspacio({{ pase.id }})">
+                        <i class="fas fa-exchange-alt me-1"></i>Cambiar Espacio
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if pase.comentarios_admin %}
+            <div class="mb-4">
+                <label class="form-label fw-bold">Observaciones del Administrador</label>
+                <div class="form-control-plaintext">
+                    {{ pase.comentarios_admin }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Información del propietario -->
+        <div class="admin-card">
+            <h4 class="mb-3">
+                <i class="fas fa-user me-2"></i>Información del Propietario
+            </h4>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nombre</label>
+                        <div class="form-control-plaintext">
+                            {{ pase.usuario.nombre }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Rol</label>
+                        <div class="form-control-plaintext">
+                            <span class="badge 
+                                {% if pase.usuario.rol == 'estudiante' %}bg-primary
+                                {% elif pase.usuario.rol == 'docente' %}bg-success
+                                {% elif pase.usuario.rol == 'visita' %}bg-info
+                                {% else %}bg-secondary{% endif %}">
+                                {{ pase.usuario.rol|title }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">DNI</label>
+                        <div class="form-control-plaintext">
+                            {{ pase.usuario.dni }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Email</label>
+                        <div class="form-control-plaintext">
+                            {{ pase.usuario.email or 'No registrado' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información del vehículo -->
+        <div class="admin-card">
+            <h4 class="mb-3">
+                <i class="fas fa-car me-2"></i>Información del Vehículo
+            </h4>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Placa</label>
+                        <div class="form-control-plaintext">
+                            <span class="badge bg-dark fs-6">{{ pase.vehiculo.placa }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tipo</label>
+                        <div class="form-control-plaintext">
+                            {{ pase.vehiculo.tipo }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Marca</label>
+                        <div class="form-control-plaintext">
+                            {{ pase.vehiculo.marca }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Modelo</label>
+                        <div class="form-control-plaintext">
+                            {{ pase.vehiculo.modelo }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Color</label>
+                        <div class="form-control-plaintext">
+                            {{ pase.vehiculo.color }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Año</label>
+                        <div class="form-control-plaintext">
+                            {{ pase.vehiculo.year or 'No especificado' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de acciones -->
+    <div class="col-md-4">
+        <div class="admin-card">
+            <h4 class="mb-3">
+                <i class="fas fa-cogs me-2"></i>Acciones
+            </h4>
+
+            {% if pase.estado == 'vigente' %}
+            <div class="d-grid gap-2">
+                <button class="btn btn-danger" onclick="revocarPase({{ pase.id }})">
+                    <i class="fas fa-ban me-2"></i>Revocar Pase
+                </button>
+                {% if pase.tipo_pase == 'temporal' %}
+                <button class="btn btn-warning" onclick="extenderPase({{ pase.id }})">
+                    <i class="fas fa-clock me-2"></i>Extender Vigencia
+                </button>
+                {% endif %}
+                <button class="btn btn-info" onclick="verHistorial({{ pase.id }})">
+                    <i class="fas fa-history me-2"></i>Ver Historial
+                </button>
+            </div>
+            {% elif pase.estado == 'expirado' %}
+            <div class="alert alert-warning">
+                <i class="fas fa-clock me-2"></i>
+                Pase expirado
+                {% if pase.tipo_pase == 'temporal' %}
+                <hr>
+                <button class="btn btn-sm btn-warning" onclick="renovarPase({{ pase.id }})">
+                    <i class="fas fa-redo me-2"></i>Renovar
+                </button>
+                {% endif %}
+            </div>
+            {% elif pase.estado == 'revocado' %}
+            <div class="alert alert-danger">
+                <i class="fas fa-ban me-2"></i>
+                Pase revocado
+                <hr>
+                <button class="btn btn-sm btn-success" onclick="reactivarPase({{ pase.id }})">
+                    <i class="fas fa-check me-2"></i>Reactivar
+                </button>
+            </div>
+            {% endif %}
+
+            <hr>
+            <div class="d-grid gap-2">
+                <a href="{{ url_for('admin.descargar_pase', id=pase.id) }}" class="btn btn-outline-primary">
+                    <i class="fas fa-download me-2"></i>Descargar PDF
+                </a>
+                <button class="btn btn-outline-secondary" onclick="window.print()">
+                    <i class="fas fa-print me-2"></i>Imprimir
+                </button>
+            </div>
+        </div>
+
+        <!-- Código QR -->
+        <div class="admin-card">
+            <h4 class="mb-3">
+                <i class="fas fa-qrcode me-2"></i>Código QR
+            </h4>
+            <div class="text-center">
+                <div class="qr-code-display p-3 bg-white rounded shadow d-inline-block">
+                    {% if pase.generar_qr_image %}
+                        <img src="{{ pase.generar_qr_image() }}" alt="Código QR" style="max-width: 200px; height: auto; border-radius: 8px;">
+                    {% else %}
+                        <div id="qrcode" style="width: 200px; height: 200px; margin: 0 auto;"></div>
+                    {% endif %}
+                </div>
+                <p class="text-muted small mt-2">
+                    Código: <code>{{ pase.qr_code }}</code>
+                </p>
+            </div>
+        </div>
+
+        <!-- Información adicional -->
+        <div class="admin-card">
+            <h4 class="mb-3">
+                <i class="fas fa-info-circle me-2"></i>Información Adicional
+            </h4>
+            <div class="info-list">
+                <div class="info-item">
+                    <strong>ID del Pase:</strong>
+                    <span class="info-value">#{{ pase.id }}</span>
+                </div>
+                {% if pase.solicitud_pase %}
+                <div class="info-item">
+                    <strong>Solicitud:</strong>
+                    <span class="info-value">
+                        <a href="{{ url_for('admin.ver_solicitud', id=pase.solicitud_pase.id) }}">
+                            #{{ pase.solicitud_pase.id }}
+                        </a>
+                    </span>
+                </div>
+                {% endif %}
+                {% if pase.ciclo_academico %}
+                <div class="info-item">
+                    <strong>Ciclo académico:</strong>
+                    <span class="info-value">{{ pase.ciclo_academico.nombre }}</span>
+                </div>
+                {% endif %}
+                <div class="info-item">
+                    <strong>Fecha de registro:</strong>
+                    <span class="info-value">{{ pase.fecha_emision.strftime('%d/%m/%Y') }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para cambiar espacio reservado -->
+<div class="modal fade" id="cambiarEspacioModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exchange-alt me-2"></i>Cambiar Espacio Reservado
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="cambiarEspacioForm" method="POST">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Seleccione un nuevo espacio disponible para este pase temporal.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Espacio actual</label>
+                        <div class="form-control-plaintext">
+                            {% if pase.estacionamiento_reservado %}
+                                Espacio #{{ pase.estacionamiento_reservado.numero }}
+                            {% else %}
+                                Sin espacio asignado
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Nuevo espacio</label>
+                        <select name="nuevo_estacionamiento_id" class="form-select" id="nuevoEspacioSelect" required>
+                            <option value="">Cargando espacios disponibles...</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Motivo del cambio</label>
+                        <textarea name="motivo_cambio" class="form-control" rows="3" placeholder="Explique el motivo del cambio de espacio..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-exchange-alt me-2"></i>Cambiar Espacio
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para revocar pase -->
+<div class="modal fade" id="revocarPaseModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-ban me-2"></i>Revocar Pase
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="revocarPaseForm" method="POST">
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>¿Está seguro de que desea revocar este pase?</strong>
+                        <p class="mb-0 mt-2">Esta acción no se puede deshacer. El pase quedará inválido inmediatamente.</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Motivo de revocación</label>
+                        <textarea name="motivo_revocacion" class="form-control" rows="3" placeholder="Explique el motivo de la revocación..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-ban me-2"></i>Revocar Pase
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+{{ super() }}
+<style>
+    /* Estilos para la lista de información */
+    .info-list {
+        font-size: 0.9rem;
+    }
+
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f8f9fa;
+    }
+
+    .info-item:last-child {
+        border-bottom: none;
+    }
+
+    .info-item strong {
+        color: #495057;
+        font-weight: 600;
+        flex-shrink: 0;
+        margin-right: 0.5rem;
+    }
+
+    .info-value {
+        color: #6c757d;
+        text-align: right;
+        font-weight: 500;
+    }
+
+    .qr-code-display {
+        border: 2px solid #e9ecef;
+    }
+
+    @media print {
+        .btn, .admin-card:last-child {
+            display: none !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+    // Generar QR code si no existe el método backend
+    {% if not pase.generar_qr_image %}
+    document.addEventListener('DOMContentLoaded', function() {
+        const qrData = {
+            codigo: "{{ pase.qr_code }}",
+            tipo: "{{ pase.tipo_pase }}",
+            vehiculo: "{{ pase.vehiculo.placa }}",
+            usuario: "{{ pase.usuario.nombre }}",
+            {% if pase.tipo_pase == 'temporal' %}
+            fecha_inicio: "{{ pase.fecha_inicio.strftime('%Y-%m-%d') if pase.fecha_inicio else '' }}",
+            fecha_fin: "{{ pase.fecha_fin.strftime('%Y-%m-%d') if pase.fecha_fin else '' }}"
+            {% endif %}
+        };
+        
+        QRCode.toCanvas(document.getElementById('qrcode'), JSON.stringify(qrData), {
+            width: 200,
+            color: {
+                dark: '#000000',
+                light: '#FFFFFF'
+            }
+        }, function (error) {
+            if (error) console.error(error);
+        });
+    });
+    {% endif %}
+
+    // Función para cambiar espacio reservado
+    function cambiarEspacio(paseId) {
+        const form = document.getElementById('cambiarEspacioForm');
+        const select = document.getElementById('nuevoEspacioSelect');
+        
+        form.action = `/admin/pase/${paseId}/cambiar-espacio`;
+        
+        // Cargar espacios disponibles
+        cargarEspaciosDisponibles();
+        
+        const modal = new bootstrap.Modal(document.getElementById('cambiarEspacioModal'));
+        modal.show();
+    }
+
+    function cargarEspaciosDisponibles() {
+        const select = document.getElementById('nuevoEspacioSelect');
+        select.innerHTML = '<option value="">Cargando espacios disponibles...</option>';
+        
+        fetch('/admin/api/estacionamientos/disponibles')
+            .then(response => response.json())
+            .then(data => {
+                select.innerHTML = '<option value="">Seleccione un espacio...</option>';
+                if (data.success && data.espacios) {
+                    data.espacios.forEach(espacio => {
+                        const option = document.createElement('option');
+                        option.value = espacio.id;
+                        option.textContent = `Espacio #${espacio.numero} - ${espacio.ubicacion || 'Sin ubicación'}`;
+                        select.appendChild(option);
+                    });
+                } else {
+                    select.innerHTML = '<option value="">No hay espacios disponibles</option>';
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar espacios:', error);
+                select.innerHTML = '<option value="">Error al cargar espacios</option>';
+            });
+    }
+
+    // Función para revocar pase
+    function revocarPase(paseId) {
+        const form = document.getElementById('revocarPaseForm');
+        form.action = `/admin/pase/${paseId}/revocar`;
+        
+        const modal = new bootstrap.Modal(document.getElementById('revocarPaseModal'));
+        modal.show();
+    }
+
+    // Función para ver historial
+    function verHistorial(paseId) {
+        window.location.href = `/admin/pase/${paseId}/historial`;
+    }
+
+    // Función para extender pase
+    function extenderPase(paseId) {
+        // Implementar modal para extender vigencia
+        console.log('Extender pase:', paseId);
+    }
+
+    // Función para renovar pase
+    function renovarPase(paseId) {
+        // Implementar lógica para renovar pase expirado
+        console.log('Renovar pase:', paseId);
+    }
+
+    // Función para reactivar pase
+    function reactivarPase(paseId) {
+        if (confirm('¿Está seguro de que desea reactivar este pase?')) {
+            window.location.href = `/admin/pase/${paseId}/reactivar`;
+        }
+    }
+
+    // Mostrar notificaciones
+    function mostrarNotificacion(mensaje, tipo = 'info') {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${tipo} alert-dismissible fade show`;
+        alertDiv.style.position = 'fixed';
+        alertDiv.style.top = '20px';
+        alertDiv.style.right = '20px';
+        alertDiv.style.zIndex = '9999';
+        alertDiv.style.minWidth = '300px';
+        alertDiv.innerHTML = `
+            ${mensaje}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(alertDiv);
+        
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.parentNode.removeChild(alertDiv);
+            }
+        }, 5000);
+    }
+</script>
+{% endblock %}

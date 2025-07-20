@@ -19,6 +19,7 @@ class PaseVehicular(db.Model):
     qr_code = db.Column(db.Text, nullable=False)  # Token QR (cifrado o firmado)
     fecha_emision = db.Column(db.DateTime, default=datetime.utcnow)
     solicitud_pase_id = db.Column(db.Integer, db.ForeignKey('solicitudes_pases.id'), nullable=True)
+    espacio_reservado = db.Column(db.Integer, nullable=True)  # Nuevo campo para espacios reservados (visitas)
     
     # Relaciones
     usuario = db.relationship('Usuario', back_populates='pases_vehiculares')
@@ -27,13 +28,14 @@ class PaseVehicular(db.Model):
     solicitud_pase = db.relationship('SolicitudPase', back_populates='pase_vehicular')
     registros_accesos = db.relationship('RegistroAcceso', back_populates='pase', lazy=True, cascade='all, delete-orphan')
     
-    def __init__(self, usuario_id, vehiculo_id, tipo_pase, fecha_inicio, fecha_fin, ciclo_id=None):
+    def __init__(self, usuario_id, vehiculo_id, tipo_pase, fecha_inicio, fecha_fin, ciclo_id=None, espacio_reservado=None):
         self.usuario_id = usuario_id
         self.vehiculo_id = vehiculo_id
         self.ciclo_id = ciclo_id
         self.tipo_pase = tipo_pase
         self.fecha_inicio = fecha_inicio
         self.fecha_fin = fecha_fin
+        self.espacio_reservado = espacio_reservado
         self.qr_code = self.generar_qr_token()
     
     def generar_qr_token(self):
@@ -65,6 +67,18 @@ class PaseVehicular(db.Model):
         return (self.estado == 'vigente' and 
                 self.fecha_inicio <= hoy <= self.fecha_fin)
     
+    def es_pase_temporal(self):
+        """Verifica si es un pase temporal (visita)"""
+        return self.tipo_pase == 'temporal'
+    
+    def es_pase_ciclo(self):
+        """Verifica si es un pase de ciclo académico"""
+        return self.tipo_pase == 'ciclo'
+    
+    def tiene_espacio_reservado(self):
+        """Verifica si tiene un espacio específico reservado"""
+        return self.espacio_reservado is not None
+    
     def revocar(self):
         """Revoca el pase"""
         self.estado = 'revocado'
@@ -72,6 +86,17 @@ class PaseVehicular(db.Model):
     def marcar_expirado(self):
         """Marca el pase como expirado"""
         self.estado = 'expirado'
+    
+    def obtener_estacionamiento_reservado(self):
+        """Obtiene el estacionamiento reservado/ocupado para este pase"""
+        from .estacionamiento import Estacionamiento
+        return Estacionamiento.query.filter_by(pase_id=self.id).filter(
+            Estacionamiento.estado.in_(['ocupado', 'reservado'])
+        ).first()
+    
+    def tiene_estacionamiento_asignado(self):
+        """Verifica si tiene un estacionamiento asignado"""
+        return self.obtener_estacionamiento_reservado() is not None
     
     def __repr__(self):
         return f'<PaseVehicular {self.tipo_pase} - {self.estado}>'
@@ -89,5 +114,6 @@ class PaseVehicular(db.Model):
             'estado': self.estado,
             'qr_code': self.qr_code,
             'fecha_emision': self.fecha_emision.isoformat() if self.fecha_emision else None,
-            'esta_vigente': self.esta_vigente()
+            'esta_vigente': self.esta_vigente(),
+            'espacio_reservado': self.espacio_reservado
         }

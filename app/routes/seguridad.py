@@ -323,27 +323,14 @@ def validar_codigo_ajax():
     if not pase.esta_vigente():
         return jsonify({'valido': False, 'mensaje': 'El pase ha expirado o no está vigente'})
     
-    # Verificar si ya tiene un estacionamiento asignado
-    estacionamiento_actual = Estacionamiento.obtener_por_pase(pase.id)
+    # Verificar si ya tiene un estacionamiento ocupado (no reservado)
+    estacionamiento_actual = Estacionamiento.obtener_ocupado_por_pase(pase.id)
     
     # Determinar si es entrada o salida
     es_entrada = estacionamiento_actual is None
     
-    # Obtener espacios disponibles si es entrada
-    espacios_disponibles = []
-    if es_entrada:
-        espacios_db = Estacionamiento.query.filter_by(estado='disponible').order_by(Estacionamiento.numero).all()
-        espacios_disponibles = [{'numero': e.numero, 'id': e.id} for e in espacios_db]
-    
-    # Información del estacionamiento actual si es salida
-    estacionamiento_info = None
-    if estacionamiento_actual:
-        estacionamiento_info = {
-            'numero': estacionamiento_actual.numero,
-            'fecha_asignacion': estacionamiento_actual.fecha_asignacion.strftime('%d/%m/%Y %H:%M') if estacionamiento_actual.fecha_asignacion else None
-        }
-    
-    return jsonify({
+    # Información básica del pase
+    response_data = {
         'valido': True,
         'pase_id': pase.id,
         'usuario': pase.usuario.nombre,
@@ -354,9 +341,62 @@ def validar_codigo_ajax():
         'estado': pase.estado,
         'fecha_fin': pase.fecha_fin.strftime('%d/%m/%Y'),
         'es_entrada': es_entrada,
-        'espacios_disponibles': espacios_disponibles,
-        'estacionamiento_actual': estacionamiento_info
-    })
+        'es_pase_temporal': pase.es_pase_temporal(),
+        'es_pase_ciclo': pase.es_pase_ciclo()
+    }
+    
+    if es_entrada:
+        # Lógica para ENTRADA
+        if pase.es_pase_temporal():
+            # PASE TEMPORAL (VISITA) - Verificar espacio reservado
+            if pase.tiene_espacio_reservado():
+                # Buscar el espacio reservado
+                espacio_reservado = Estacionamiento.query.filter_by(numero=pase.espacio_reservado).first()
+                
+                if not espacio_reservado:
+                    return jsonify({'valido': False, 'mensaje': f'El espacio reservado {pase.espacio_reservado} no existe'})
+                
+                # Verificar que esté reservado para este pase específico
+                if not espacio_reservado.esta_reservado_para(pase.id):
+                    if espacio_reservado.estado == 'disponible':
+                        return jsonify({'valido': False, 'mensaje': f'El espacio {pase.espacio_reservado} no está reservado'})
+                    elif espacio_reservado.estado == 'ocupado':
+                        return jsonify({'valido': False, 'mensaje': f'El espacio {pase.espacio_reservado} está ocupado por otro vehículo'})
+                    elif espacio_reservado.estado == 'reservado':
+                        return jsonify({'valido': False, 'mensaje': f'El espacio {pase.espacio_reservado} está reservado para otro pase'})
+                    else:
+                        return jsonify({'valido': False, 'mensaje': f'El espacio {pase.espacio_reservado} no está disponible'})
+                
+                response_data.update({
+                    'espacio_reservado': pase.espacio_reservado,
+                    'mensaje_especial': f'Pase de visita con espacio {pase.espacio_reservado} reservado'
+                })
+            else:
+                return jsonify({'valido': False, 'mensaje': 'Pase temporal sin espacio reservado asignado'})
+                
+        else:
+            # PASE DE CICLO ACADÉMICO - Seguridad puede asignar cualquier espacio
+            espacios_db = Estacionamiento.query.filter_by(estado='disponible').order_by(Estacionamiento.numero).all()
+            espacios_disponibles = [{'numero': e.numero, 'id': e.id} for e in espacios_db]
+            
+            if not espacios_disponibles:
+                return jsonify({'valido': False, 'mensaje': 'No hay espacios disponibles'})
+            
+            response_data.update({
+                'espacios_disponibles': espacios_disponibles,
+                'mensaje_especial': 'Pase de ciclo académico - seleccionar espacio disponible'
+            })
+    else:
+        # Lógica para SALIDA
+        estacionamiento_info = {
+            'numero': estacionamiento_actual.numero,
+            'fecha_asignacion': estacionamiento_actual.fecha_asignacion.strftime('%d/%m/%Y %H:%M') if estacionamiento_actual.fecha_asignacion else None
+        }
+        response_data.update({
+            'estacionamiento_actual': estacionamiento_info
+        })
+    
+    return jsonify(response_data)
 
 @seguridad_bp.route('/registrar-acceso', methods=['POST'])
 @login_required
@@ -427,8 +467,10 @@ def registrar_entrada_con_espacio_especifico():
         # Registrar acceso
         acceso = RegistroAcceso.registrar_acceso(
             pase_id=pase_id,
+            tipo='entrada',  # Agregar tipo
             permitido=True,
             usuario_seguridad_id=session.get('user_id'),
+            espacio_asignado=espacio_numero,  # Agregar espacio asignado
             observaciones=f'Entrada - Espacio {espacio_numero} asignado manualmente'
         )
         
@@ -587,12 +629,16 @@ def registrar_entrada_con_estacionamiento():
         if not estacionamiento.asignar(pase_id, 'Asignación automática por entrada'):
             return jsonify({'success': False, 'mensaje': 'Error al asignar el estacionamiento'})
         
+        numero_espacio = estacionamiento.numero
+
         # Registrar acceso
         acceso = RegistroAcceso.registrar_acceso(
             pase_id=pase_id,
+            tipo='entrada',  # Agregar tipo
             permitido=True,
             usuario_seguridad_id=session.get('user_id'),
-            observaciones=f'Entrada - Espacio {estacionamiento.numero} asignado'
+            espacio_asignado=numero_espacio,  # Agregar espacio que se liberó
+            observaciones=f'Entrada - Espacio {numero_espacio} liberado'
         )
         
         db.session.commit()
@@ -611,7 +657,7 @@ def registrar_entrada_con_estacionamiento():
 @login_required
 @security_required
 def registrar_salida_con_liberacion():
-    """Registrar salida y liberar estacionamiento automáticamente"""
+    """Registrar salida y liberar estacionamiento según tipo de pase"""
     data = request.get_json()
     pase_id = data.get('pase_id')
     
@@ -625,29 +671,42 @@ def registrar_salida_con_liberacion():
             return jsonify({'success': False, 'mensaje': 'Pase no encontrado'})
         
         # Buscar estacionamiento asignado
-        estacionamiento = Estacionamiento.obtener_por_pase(pase_id)
+        estacionamiento = Estacionamiento.obtener_ocupado_por_pase(pase_id)
         if not estacionamiento:
             return jsonify({'success': False, 'mensaje': 'No se encontró estacionamiento asignado a este vehículo'})
         
         numero_espacio = estacionamiento.numero
         
-        # Liberar estacionamiento
-        estacionamiento.liberar()
+        # Liberar estacionamiento según el tipo de pase
+        nuevo_estado = estacionamiento.liberar_segun_tipo_pase()
+        
+        # Determinar mensaje según el tipo de liberación
+        if nuevo_estado == 'reservado':
+            mensaje_liberacion = f'Salida registrada - Espacio {numero_espacio} queda reservado hasta vencimiento del pase'
+            observaciones = f'Salida temporal - Espacio reservado hasta {pase.fecha_fin.strftime("%d/%m/%Y")}'
+        else:
+            mensaje_liberacion = f'Salida registrada - Espacio {numero_espacio} liberado completamente'
+            observaciones = f'Salida - Espacio {numero_espacio} liberado'
         
         # Registrar acceso
         acceso = RegistroAcceso.registrar_acceso(
             pase_id=pase_id,
+            tipo='salida',
             permitido=True,
             usuario_seguridad_id=session.get('user_id'),
-            observaciones=f'Salida - Espacio {numero_espacio} liberado'
+            espacio_asignado=numero_espacio,
+            observaciones=observaciones
         )
         
         db.session.commit()
         
         return jsonify({
             'success': True, 
-            'mensaje': 'Salida registrada y estacionamiento liberado correctamente',
-            'espacio_liberado': numero_espacio
+            'mensaje': mensaje_liberacion,
+            'espacio_liberado': numero_espacio,
+            'estado_espacio': nuevo_estado,
+            'tipo_pase': pase.tipo_pase,
+            'mantiene_reserva': nuevo_estado == 'reservado'
         })
     
     except Exception as e:
@@ -730,3 +789,67 @@ def obtener_detalles_espacio(numero):
             resultado['hora_entrada'] = estacionamiento.fecha_asignacion.strftime('%d/%m/%Y %H:%M')
     
     return jsonify(resultado)
+
+@seguridad_bp.route('/registrar-entrada-pase-temporal', methods=['POST'])
+@login_required
+@security_required
+def registrar_entrada_pase_temporal():
+    """Registrar entrada para pase temporal con espacio reservado"""
+    data = request.get_json()
+    pase_id = data.get('pase_id')
+    
+    if not pase_id:
+        return jsonify({'success': False, 'mensaje': 'ID de pase es requerido'})
+    
+    try:
+        # Verificar que el pase existe y es temporal
+        pase = PaseVehicular.query.get(pase_id)
+        if not pase:
+            return jsonify({'success': False, 'mensaje': 'Pase no encontrado'})
+        
+        if not pase.es_pase_temporal():
+            return jsonify({'success': False, 'mensaje': 'Este pase no es temporal'})
+        
+        if not pase.tiene_espacio_reservado():
+            return jsonify({'success': False, 'mensaje': 'Pase temporal sin espacio reservado'})
+        
+        # Verificar que no tenga ya un estacionamiento ocupado
+        estacionamiento_ocupado = Estacionamiento.obtener_ocupado_por_pase(pase_id)
+        if estacionamiento_ocupado:
+            return jsonify({'success': False, 'mensaje': f'El vehículo ya tiene asignado el espacio {estacionamiento_ocupado.numero}'})
+        
+        # Obtener el espacio reservado
+        estacionamiento = Estacionamiento.query.filter_by(numero=pase.espacio_reservado).first()
+        if not estacionamiento:
+            return jsonify({'success': False, 'mensaje': 'Espacio reservado no encontrado'})
+        
+        # Verificar que esté reservado para este pase
+        if not estacionamiento.esta_reservado_para(pase.id):
+            return jsonify({'success': False, 'mensaje': f'El espacio {pase.espacio_reservado} no está reservado para este pase.'})
+        
+        # Confirmar la reserva (cambiar de 'reservado' a 'ocupado')
+        if not estacionamiento.confirmar_reserva(pase.id):
+            return jsonify({'success': False, 'mensaje': 'Error al confirmar la reserva del estacionamiento'})
+        
+        # Registrar acceso
+        acceso = RegistroAcceso.registrar_acceso(
+            pase_id=pase.id,
+            tipo='entrada',  # Agregar el tipo de acceso
+            permitido=True,
+            usuario_seguridad_id=session.get('user_id'),
+            espacio_asignado=pase.espacio_reservado,  # Agregar el espacio asignado
+            observaciones=f'Entrada pase temporal - Confirmación de reserva espacio {pase.espacio_reservado}'
+        )
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'mensaje': 'Entrada registrada correctamente para pase temporal',
+            'espacio_asignado': pase.espacio_reservado,
+            'tipo_pase': 'temporal'
+        })
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'mensaje': f'Error al procesar entrada temporal: {str(e)}'})

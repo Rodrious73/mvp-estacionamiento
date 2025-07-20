@@ -630,6 +630,33 @@
 {% block extra_js %}
 {{ super() }}
 <script>
+    // Variables globales
+    let solicitudActual = null;
+
+    // Función para mostrar notificaciones
+    function mostrarNotificacion(mensaje, tipo = 'info') {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${tipo} alert-dismissible fade show`;
+        alertDiv.style.position = 'fixed';
+        alertDiv.style.top = '20px';
+        alertDiv.style.right = '20px';
+        alertDiv.style.zIndex = '9999';
+        alertDiv.style.minWidth = '300px';
+        alertDiv.innerHTML = `
+            <i class="fas fa-${tipo === 'success' ? 'check-circle' : tipo === 'danger' || tipo === 'error' ? 'exclamation-circle' : tipo === 'warning' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+            ${mensaje}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        document.body.appendChild(alertDiv);
+
+        // Auto-hide después de 5 segundos
+        setTimeout(() => {
+            const alert = bootstrap.Alert.getOrCreateInstance(alertDiv);
+            alert.close();
+        }, 5000);
+    }
+
     function aprobarSolicitud(solicitudId) {
         const form = document.getElementById('aprobarForm');
         const infoSection = document.getElementById('infoSolicitud');
@@ -715,13 +742,14 @@
         fetch('/admin/api/estacionamientos/disponibles')
             .then(response => response.json())
             .then(data => {
+                console.log('Estacionamientos data:', data);
                 select.innerHTML = '<option value="">Seleccionar espacio...</option>';
 
-                if (data.success && data.estacionamientos.length > 0) {
+                if (data.success && data.estacionamientos && data.estacionamientos.length > 0) {
                     data.estacionamientos.forEach(est => {
                         const option = document.createElement('option');
                         option.value = est.id;
-                        option.textContent = `Espacio ${est.numero} - ${est.ubicacion}`;
+                        option.textContent = `Espacio ${est.numero}`;
                         option.dataset.estacionamiento = JSON.stringify(est);
                         select.appendChild(option);
                     });
@@ -735,8 +763,7 @@
                             <div class="d-flex align-items-center justify-content-between">
                                 <div class="text-start">
                                     <h6 class="mb-1">Espacio ${est.numero}</h6>
-                                    <small class="text-muted">${est.ubicacion}</small>
-                                    ${est.tipo ? `<br><small class="badge bg-info">${est.tipo}</small>` : ''}
+                                    ${est.observaciones ? `<small class="text-muted">${est.observaciones}</small>` : '<small class="text-muted">Sin observaciones</small>'}
                                 </div>
                                 <div class="text-end">
                                     <span class="badge bg-success">
@@ -789,5 +816,21 @@
         const modal = new bootstrap.Modal(document.getElementById('rechazarModal'));
         modal.show();
     }
+
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function () {
+        // Validación del formulario de rechazo
+        const rechazarForm = document.getElementById('rechazarForm');
+        if (rechazarForm) {
+            rechazarForm.addEventListener('submit', function (e) {
+                const comentarios = this.querySelector('textarea[name="comentarios_admin"]').value.trim();
+                if (!comentarios) {
+                    e.preventDefault();
+                    mostrarNotificacion('Debe proporcionar un motivo para rechazar la solicitud', 'warning');
+                    return false;
+                }
+            });
+        }
+    });
 </script>
 {% endblock %}

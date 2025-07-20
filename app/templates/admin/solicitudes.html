@@ -428,13 +428,14 @@
         fetch('/admin/api/estacionamientos/disponibles')
             .then(response => response.json())
             .then(data => {
+                console.log('Estacionamientos data:', data);
                 select.innerHTML = '<option value="">Seleccionar espacio...</option>';
 
-                if (data.success && data.estacionamientos.length > 0) {
+                if (data.success && data.estacionamientos && data.estacionamientos.length > 0) {
                     data.estacionamientos.forEach(est => {
                         const option = document.createElement('option');
                         option.value = est.id;
-                        option.textContent = `Espacio ${est.numero} - ${est.ubicacion}`;
+                        option.textContent = `Espacio ${est.numero}`;
                         option.dataset.estacionamiento = JSON.stringify(est);
                         select.appendChild(option);
                     });
@@ -448,8 +449,7 @@
                             <div class="d-flex align-items-center justify-content-between">
                                 <div class="text-start">
                                     <h6 class="mb-1">Espacio ${est.numero}</h6>
-                                    <small class="text-muted">${est.ubicacion}</small>
-                                    ${est.tipo ? `<br><small class="badge bg-info">${est.tipo}</small>` : ''}
+                                    ${est.observaciones ? `<small class="text-muted">${est.observaciones}</small>` : '<small class="text-muted">Sin observaciones</small>'}
                                 </div>
                                 <div class="text-end">
                                     <span class="badge bg-success">
