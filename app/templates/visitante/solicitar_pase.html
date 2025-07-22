@@ -53,6 +53,16 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="mb-4">
+                        <label for="motivo" class="form-label">
+                            <i class="fas fa-comment me-2"></i>
+                            Motivo de la Visita <span class="text-muted">(Opcional)</span>
+                        </label>
+                        <textarea class="form-control" id="motivo" name="motivo" rows="3" 
+                                  placeholder="Describe brevemente el motivo de tu visita (reunión, evento, gestión, etc.)"></textarea>
+                        <div class="form-text">Este campo es opcional pero puede ayudar en el proceso de aprobación</div>
+                    </div>
                     
                     <div class="alert alert-info alert-custom">
                         <i class="fas fa-info-circle me-2"></i>
@@ -160,5 +170,33 @@ document.getElementById('vehiculo_id').addEventListener('change', function() {
         this.classList.remove('is-valid');
     }
 });
+
+const motivoTextarea = document.getElementById('motivo');
+if (motivoTextarea) {
+    motivoTextarea.addEventListener('input', function() {
+        const maxLength = 255;
+        const currentLength = this.value.length;
+        
+        // Crear o actualizar contador si no existe
+        let contador = document.getElementById('motivo-contador');
+        if (!contador) {
+            contador = document.createElement('small');
+            contador.id = 'motivo-contador';
+            contador.className = 'form-text text-end';
+            motivoTextarea.parentNode.appendChild(contador);
+        }
+        
+        contador.textContent = `${currentLength}/${maxLength} caracteres`;
+        
+        if (currentLength > maxLength) {
+            contador.className = 'form-text text-end text-danger';
+            this.value = this.value.substring(0, maxLength);
+        } else if (currentLength > maxLength * 0.8) {
+            contador.className = 'form-text text-end text-warning';
+        } else {
+            contador.className = 'form-text text-end text-muted';
+        }
+    });
+}
 </script>
 {% endblock %}

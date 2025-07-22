@@ -176,6 +176,21 @@
                                 </div>
                             </div>
                         </div>
+
+                        {% if solicitud.comentarios_solicitante %}
+                        <div class="card border-start border-info border-3 mt-3">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-comment-dots me-2"></i>
+                                    Mis Comentarios
+                                </h6>
+                                <div class="alert alert-light alert-custom">
+                                    <i class="fas fa-user me-2 text-primary"></i>
+                                    {{ solicitud.comentarios_solicitante }}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
                         
                         {% if solicitud.comentarios_admin %}
                         <div class="card border-start border-warning border-3 mt-3">

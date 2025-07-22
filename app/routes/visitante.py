@@ -46,6 +46,7 @@ def solicitar_pase():
             vehiculo_id = request.form.get('vehiculo_id')
             fecha_inicio = request.form.get('fecha_inicio')
             fecha_fin = request.form.get('fecha_fin')
+            motivo = request.form.get('motivo', '').strip()
             
             # Validaciones
             if not vehiculo_id or not fecha_inicio or not fecha_fin:
@@ -75,7 +76,8 @@ def solicitar_pase():
                 usuario_id=user['id'],
                 vehiculo_id=vehiculo_id,
                 tipo_pase='temporal',
-                ciclo_id=None
+                ciclo_id=None,
+                comentarios_solicitante=motivo if motivo else None
             )
             
             # Asignar fechas de reservación

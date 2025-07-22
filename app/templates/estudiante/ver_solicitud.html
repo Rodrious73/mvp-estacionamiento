@@ -215,13 +215,23 @@
                             </div>
                         {% endif %}
                         
-                        {% if solicitud.motivo %}
+                        {% if solicitud.comentarios_solicitante %}
                             <div class="info-row">
                                 <div class="info-label">
                                     <i class="fas fa-comment me-2"></i>
-                                    Motivo:
+                                    Comentarios del Solicitante:
                                 </div>
-                                <div class="info-value">{{ solicitud.motivo }}</div>
+                                <div class="info-value">{{ solicitud.comentarios_solicitante }}</div>
+                            </div>
+                        {% endif %}
+
+                        {% if solicitud.comentarios_admin %}
+                            <div class="info-row">
+                                <div class="info-label">
+                                    <i class="fas fa-user-shield me-2"></i>
+                                    Comentarios del Administrador:
+                                </div>
+                                <div class="info-value">{{ solicitud.comentarios_admin }}</div>
                             </div>
                         {% endif %}
                         

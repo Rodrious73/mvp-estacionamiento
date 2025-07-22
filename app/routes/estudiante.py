@@ -51,6 +51,7 @@ def solicitar_pase():
             tipo_pase = request.form.get('tipo_pase')
             fecha_inicio = request.form.get('fecha_inicio')
             fecha_fin = request.form.get('fecha_fin')
+            motivo = request.form.get('motivo', '').strip()
             
             # Validaciones
             if not vehiculo_id or not tipo_pase:
@@ -113,7 +114,8 @@ def solicitar_pase():
                 usuario_id=user['id'],
                 vehiculo_id=vehiculo_id,
                 tipo_pase=tipo_pase,
-                ciclo_id=ciclo_id
+                ciclo_id=ciclo_id,
+                comentarios_solicitante=motivo
             )
             
             db.session.add(nueva_solicitud)

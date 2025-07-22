@@ -65,11 +65,39 @@
             </div>
             {% endif %}
 
+            <!-- Comentarios del solicitante -->
+            <div class="mb-4">
+                <label class="form-label fw-bold">Comentarios del Solicitante</label>
+                <div class="form-control-plaintext">
+                    <div class="d-flex align-items-start">
+                        <div class="me-3">
+                            <i class="fas fa-user-circle text-muted"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold text-primary mb-1">{{ solicitud.usuario.nombre }}</div>
+                            {% if solicitud.comentarios_solicitante %}
+                                <div class="text-muted">{{ solicitud.comentarios_solicitante }}</div>
+                            {% else %}
+                                <div class="text-muted fst-italic">Sin comentarios adicionales</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {% if solicitud.estado != 'pendiente' and solicitud.comentarios_admin %}
             <div class="mb-4">
                 <label class="form-label fw-bold">Comentarios del Administrador</label>
                 <div class="form-control-plaintext">
-                    {{ solicitud.comentarios_admin }}
+                    <div class="d-flex align-items-start">
+                        <div class="me-3">
+                            <i class="fas fa-user-shield text-muted"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold text-success mb-1">Administrador</div>
+                            <div class="text-muted">{{ solicitud.comentarios_admin }}</div>
+                        </div>
+                    </div>
                 </div>
             </div>
             {% endif %}
@@ -366,8 +394,7 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <label class="form-label">Espacios disponibles</label>
-                                <select name="estacionamiento_id" class="form-select" id="estacionamientoSelect"
-                                    required>
+                                <select name="estacionamiento_id" class="form-select" id="estacionamientoSelect">
                                     <option value="">Cargando espacios...</option>
                                 </select>
                                 <small class="form-text text-muted">
@@ -695,9 +722,11 @@
 
                     if (esVisitante && esTemporal) {
                         estacionamientoSection.style.display = 'block';
+                        document.getElementById('estacionamientoSelect').setAttribute('required', '');
                         cargarEstacionamientos();
                     } else {
                         estacionamientoSection.style.display = 'none';
+                        document.getElementById('estacionamientoSelect').removeAttribute('required');
                         // Para no visitantes o pases de ciclo, no se requiere estacionamiento
                         btnAprobar.innerHTML = '<i class="fas fa-check me-2"></i>Aprobar';
                         btnAprobar.disabled = false;
