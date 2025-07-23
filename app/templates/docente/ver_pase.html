@@ -171,10 +171,10 @@
                         <i class="fas fa-arrow-left me-2"></i>
                         Volver al Dashboard
                     </a>
-                    <button type="button" class="btn btn-outline-light" onclick="window.print()">
-                        <i class="fas fa-print me-2"></i>
-                        Imprimir
-                    </button>
+                    <a href="{{ url_for(request.endpoint.split('.')[0] + '.imprimir_pase', id=pase.id) }}" 
+                        class="btn btn-outline-light" target="_blank">
+                        <i class="fas fa-print me-2"></i>Imprimir Pase
+                    </a>
                 </div>
             </div>
         </div>

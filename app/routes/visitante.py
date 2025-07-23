@@ -10,6 +10,16 @@ from datetime import datetime, date
 
 visitante_bp = Blueprint('visitante', __name__, url_prefix='/visitante')
 
+@visitante_bp.route('/pase/<int:id>/imprimir')
+@login_required
+def imprimir_pase(id):
+    user = get_current_user()
+    pase = PaseVehicular.query.filter_by(
+        id=id, 
+        usuario_id=user['id']
+    ).first_or_404()
+    return render_template('utils/pase_impresion.html', pase=pase)
+
 @visitante_bp.route('/dashboard')
 @login_required
 @role_required('visita')

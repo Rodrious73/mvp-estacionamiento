@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pase Vehicular - {{ pase.vehiculo.placa }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: white;
+        }
+        
+        .pase-container {
+            max-width: 400px;
+            margin: 0 auto;
+            border: 2px solid #000;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header {
+            margin-bottom: 20px;
+        }
+        
+        .header h3 {
+            margin: 5px 0;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .header h4 {
+            margin: 5px 0;
+            font-size: 14px;
+            font-weight: normal;
+        }
+        
+        .tipo-pase {
+            margin: 20px 0;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .qr-section {
+            margin: 20px 0;
+        }
+        
+        .qr-section img {
+            max-width: 150px;
+            border: 1px solid #ccc;
+        }
+        
+        .vigencia-section {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .vigencia-section h4 {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .info-line {
+            margin: 8px 0;
+            font-size: 12px;
+        }
+        
+        .info-line strong {
+            font-weight: bold;
+        }
+        
+        .importante {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .importante h4 {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .importante ul {
+            margin: 0 auto;
+            padding: 0;
+            font-size: 10px;
+            list-style: none;
+            display: inline-block;
+            text-align: left;
+        }
+        
+        .importante li {
+            margin: 2px 0;
+        }
+        
+        .generado {
+            margin-top: 15px;
+            font-size: 10px;
+            text-align: center;
+        }
+        
+        /* Estilos para los botones */
+        .btn-container {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            margin: 0 8px;
+            border: none;
+            border-radius: 8px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(116, 185, 255, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn:hover:before {
+            left: 100%;
+        }
+        
+        .btn i {
+            margin-right: 8px;
+        }
+        
+        @media print {
+            body { margin: 0; padding: 10px; }
+            .no-print { display: none !important; }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="no-print btn-container">
+        <button onclick="window.print()" class="btn btn-primary">
+            <i class="fas fa-print"></i>Imprimir Pase
+        </button>
+        <button onclick="window.close()" class="btn btn-secondary">
+            <i class="fas fa-times"></i>Cerrar Ventana
+        </button>
+    </div>
+
+    <div class="pase-container">
+        <!-- Header -->
+        <div class="header">
+            <h3>UNIVERSIDAD NACIONAL</h3>
+            <h4>José Faustino Sánchez Carrión</h4>
+            <h4>Sistema de Control Vehicular</h4>
+        </div>
+
+        <!-- Tipo de Pase -->
+        <div class="tipo-pase">
+            PASE VEHICULAR - 
+            {% if pase.tipo_pase == 'ciclo' %}CICLO ACADÉMICO{% else %}{{ pase.tipo_pase.upper() }}{% endif %}
+        </div>
+
+        <!-- QR Code -->
+        <div class="qr-section">
+            {% if pase.generar_qr_image %}
+                <img src="{{ pase.generar_qr_image() }}" alt="Código QR">
+            {% else %}
+                <div style="width: 150px; height: 150px; border: 1px solid #ccc; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
+                    QR AQUÍ
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Vigencia del Pase -->
+        <div class="vigencia-section">
+            <h4>Vigencia del Pase</h4>
+            <div class="info-line">
+                <strong>Fecha Emisión:</strong><br>
+                {{ pase.fecha_emision.strftime('%d/%m/%Y %H:%M') }}
+            </div>
+            <div class="info-line">
+                <strong>Válido desde:</strong><br>
+                {{ pase.fecha_inicio.strftime('%d/%m/%Y') }}
+            </div>
+            <div class="info-line">
+                <strong>Válido hasta:</strong><br>
+                {{ pase.fecha_fin.strftime('%d/%m/%Y') }}
+            </div>
+            {% if pase.ciclo %}
+            <div class="info-line">
+                <strong>Ciclo:</strong><br>
+                {{ pase.ciclo.nombre }}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Importante -->
+        <div class="importante">
+            <h4>IMPORTANTE:</h4>
+            <ul>
+                <li>• Este pase debe ser presentado junto con documentos de identidad</li>
+                <li>• Válido únicamente para el vehículo registrado</li>
+                <li>• No transferible a terceros</li>
+                <li>• Sujeto a verificación por personal de seguridad</li>
+            </ul>
+        </div>
+
+        <!-- Generado -->
+        <div class="generado">
+            Generado el {{ pase.fecha_emision.strftime('%d/%m/%Y a las %H:%M') }}
+        </div>
+    </div>
+
+    <script>
+        // Auto-imprimir si viene el parámetro
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('print') === 'true') {
+            window.onload = function() {
+                setTimeout(() => window.print(), 500);
+            };
+        }
+    </script>
+</body>
+</html>

@@ -14,6 +14,14 @@ import json
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
+@admin_bp.route('/pase/<int:id>/imprimir')
+@login_required
+@admin_required
+def imprimir_pase(id):
+    """Página de impresión del pase vehicular"""
+    pase = PaseVehicular.query.get_or_404(id)
+    return render_template('utils/pase_impresion.html', pase=pase)
+
 @admin_bp.route('/dashboard')
 @login_required
 @admin_required
