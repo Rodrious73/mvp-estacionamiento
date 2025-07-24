@@ -10,6 +10,7 @@ from app.models.ciclo_academico import CicloAcademico
 from app.utils.auth_utils import login_required, admin_required
 from datetime import datetime, timedelta
 from sqlalchemy import func, desc, asc
+from app.utils.send_mail import enviar_visitante_aprobado, enviar_solicitud_aprobada
 import json
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -189,6 +190,29 @@ def aprobar_solicitud(id):
                 estacionamiento.pase_id = pase.id
                 estacionamiento.fecha_asignacion = datetime.now()
                 estacionamiento.observaciones = f'Reservado para visitante {solicitud.usuario.nombre} - Pase #{pase.id}'
+
+                qr_image_base64 = pase.generar_qr_image()
+
+                enviar_visitante_aprobado(
+                    destinatario_email=solicitud.usuario.email,
+                    destinatario_nombre=solicitud.usuario.nombre,
+                    id_solicitud=solicitud.id,
+                    tipo_pase=solicitud.tipo_pase,
+                    codigo_qr=pase.qr_code,
+                    qr_image_base64=qr_image_base64,
+                    placa_vehiculo=solicitud.vehiculo.placa,
+                    color_vehiculo=getattr(solicitud.vehiculo, 'color', 'No especificado'),
+                    numero_espacio=estacionamiento.numero,
+                    fecha_inicio=pase.fecha_inicio.strftime('%d/%m/%Y'),
+                    fecha_fin=pase.fecha_fin.strftime('%d/%m/%Y'),
+                    duracion_visita=f"{(pase.fecha_fin - pase.fecha_inicio).days + 1} día(s)",
+                    marca_vehiculo=getattr(solicitud.vehiculo, 'marca', 'No especificado'),
+                    modelo_vehiculo=getattr(solicitud.vehiculo, 'modelo', 'No especificado'),
+                    # Enlaces del sistema
+                    link_ver_pase=url_for('admin.ver_pase', id=pase.id, _external=True),
+                    link_descargar_qr=url_for('admin.descargar_pase', id=pase.id, _external=True),
+                    comentarios_admin=comentarios or "Pase de visitante aprobado exitosamente."
+                )
                 
                 flash(f'Solicitud aprobada y espacio {estacionamiento.numero} reservado exitosamente', 'success')
             else:
@@ -199,6 +223,25 @@ def aprobar_solicitud(id):
             # Si es visitante temporal pero no se seleccionó estacionamiento
             flash('Solicitud aprobada pero no se reservó ningún estacionamiento', 'warning')
         else:
+
+            qr_image_base64 = pase.generar_qr_image()
+            
+            enviar_solicitud_aprobada(
+                destinatario_email=solicitud.usuario.email,
+                destinatario_nombre=solicitud.usuario.nombre,
+                id_solicitud=solicitud.id,
+                tipo_pase=solicitud.tipo_pase,
+                codigo_qr=pase.qr_code,
+                qr_image_base64=qr_image_base64, 
+                placa_vehiculo=solicitud.vehiculo.placa,
+                marca_vehiculo=getattr(solicitud.vehiculo, 'marca', 'No especificado'),
+                modelo_vehiculo=getattr(solicitud.vehiculo, 'modelo', 'No especificado'),
+                fecha_inicio=pase.fecha_inicio.strftime('%d/%m/%Y'),
+                fecha_fin=pase.fecha_fin.strftime('%d/%m/%Y'),
+                link_ver_pase=url_for('admin.ver_pase', id=pase.id, _external=True),
+                link_descargar_qr=url_for('admin.descargar_pase', id=pase.id, _external=True),
+                comentarios_admin=comentarios or "Solicitud aprobada exitosamente."
+            )
             # Para otros casos (no visitantes o pases de ciclo)
             flash('Solicitud aprobada exitosamente', 'success')
         

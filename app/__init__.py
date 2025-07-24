@@ -3,10 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 from config import Config
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask_mail import Mail
 
 db = SQLAlchemy()
-mail = Mail()
 
 limiter = Limiter(get_remote_address)
 
@@ -16,7 +14,6 @@ def create_app():
     
     limiter.init_app(app)
     db.init_app(app)
-    mail.init_app(app)
 
     # Importar y registrar los Blueprints
     from app.routes.index import index_bp

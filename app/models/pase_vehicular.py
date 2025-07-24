@@ -61,6 +61,38 @@ class PaseVehicular(db.Model):
         img_str = base64.b64encode(img_buffer.getvalue()).decode()
         return f"data:image/png;base64,{img_str}"
     
+    def generar_qr_image_email(self):
+        """Genera la imagen QR en formato base64"""
+        # Crear el objeto QR
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        
+        # Agregar los datos del pase
+        qr_data = {
+            'id': self.id,
+            'token': self.qr_code,
+            'usuario': self.usuario_id,
+            'vehiculo': self.vehiculo_id,
+            'valido_hasta': self.fecha_fin.strftime('%Y-%m-%d')
+        }
+        
+        qr.add_data(str(qr_data))
+        qr.make(fit=True)
+        
+        # Crear la imagen
+        img = qr.make_image(fill_color="black", back_color="white")
+        
+        # Convertir a base64
+        buffer = io.BytesIO()
+        img.save(buffer, format='PNG')
+        img_base64 = base64.b64encode(buffer.getvalue()).decode()
+        
+        return f"data:image/png;base64,{img_base64}"
+    
     def esta_vigente(self):
         """Verifica si el pase está vigente en la fecha actual"""
         hoy = date.today()

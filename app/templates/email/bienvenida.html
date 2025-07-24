@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bienvenido al Sistema de Estacionamiento</title>
+</head>
+<body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; margin: 0; padding: 20px;">
+    
+    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.1);">
+        
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center;">
+            <h1 style="margin: 0; font-size: 28px; font-weight: 300;">¡Bienvenido al Sistema QR Universitario!</h1>
+        </div>
+        
+        <!-- Content -->
+        <div style="padding: 40px 30px;">
+            
+            <!-- Welcome Icon -->
+            <div style="text-align: center; margin-bottom: 30px;">
+                <div style="font-size: 64px; color: #667eea;">👋</div>
+            </div>
+            
+            <div style="font-size: 18px; margin-bottom: 25px; color: #555;">
+                <strong>¡Hola {{ nombre }}!</strong>
+            </div>
+            
+            <p>Tu cuenta ha sido creada exitosamente en nuestro Sistema de Gestión de Estacionamiento Universitario. Ahora puedes acceder a todas las funcionalidades disponibles para tu rol.</p>
+            
+            <!-- Benefits Section -->
+            <div style="background-color: #f8f9fa; padding: 25px; border-radius: 8px; margin: 25px 0;">
+                <h3 style="margin-top: 0; color: #333;">¿Qué puedes hacer ahora?</h3>
+                
+                <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                    <div style="width: 30px; height: 30px; background-color: #667eea; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-size: 14px;">🚗</div>
+                    <div>
+                        <strong>Registrar vehículos</strong><br>
+                        <small>Añade tus vehículos al sistema para gestionar tus pases</small>
+                    </div>
+                </div>
+                
+                <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                    <div style="width: 30px; height: 30px; background-color: #667eea; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-size: 14px;">📄</div>
+                    <div>
+                        <strong>Solicitar pases</strong><br>
+                        <small>Solicita pases de estacionamiento para tus vehículos</small>
+                    </div>
+                </div>
+                
+                <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                    <div style="width: 30px; height: 30px; background-color: #667eea; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-size: 14px;">📱</div>
+                    <div>
+                        <strong>Códigos QR únicos</strong><br>
+                        <small>Recibe códigos QR para acceso rápido al estacionamiento</small>
+                    </div>
+                </div>
+                
+                <div style="display: flex; align-items: center; margin-bottom: 0;">
+                    <div style="width: 30px; height: 30px; background-color: #667eea; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-size: 14px;">⚡</div>
+                    <div>
+                        <strong>Acceso rápido</strong><br>
+                        <small>Gestiona todo desde tu dispositivo móvil</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- CTA Button -->
+            {% if tiene_link_login %}
+            <div style="text-align: center;">
+                <a href="{{ link_login }}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; margin: 20px 0;">
+                    🔗 Iniciar Sesión Ahora
+                </a>
+            </div>
+            {% else %}
+            <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center;">
+                <p style="margin: 0; color: #856404;">
+                    <strong>📧 Próximos pasos:</strong><br>
+                    Recibirás un enlace de acceso en tu correo próximamente.
+                </p>
+            </div>
+            {% endif %}
+            
+            <!-- Info Footer -->
+            <div style="background-color: #e3f2fd; border: 1px solid #bbdefb; padding: 20px; border-radius: 8px; margin: 25px 0;">
+                <h4 style="color: #1976d2; margin-top: 0; font-size: 16px;">ℹ️ Información Importante</h4>
+                <ul style="margin: 0; padding-left: 20px; color: #1976d2;">
+                    <li style="margin-bottom: 8px;">Mantén tus datos actualizados en el sistema</li>
+                    <li style="margin-bottom: 8px;">Los pases son personales e intransferibles</li>
+                    <li style="margin-bottom: 8px;">Respeta las normas de estacionamiento del campus</li>
+                    <li style="margin-bottom: 0;">Contacta al soporte en caso de dudas</li>
+                </ul>
+            </div>
+            
+            <p style="margin-top: 30px; font-size: 14px; color: #666; text-align: center;">
+                Fecha de registro: {{ fecha_actual }}<br>
+                Si tienes alguna pregunta o necesitas ayuda, no dudes en contactar al equipo de soporte.
+            </p>
+        </div>
+        
+        <!-- Footer -->
+        <div style="background-color: #f8f9fa; padding: 20px 30px; text-align: center; color: #666; font-size: 14px;">
+            <p style="margin: 10px 0;">&copy; 2025 Sistema QR Universitario. Todos los derechos reservados.</p>
+            <p style="margin: 10px 0;">Este es un mensaje automático, por favor no responder a este correo.</p>
+            <p style="margin: 10px 0;"><strong>Soporte:</strong> En caso de dudas, contacta al área de administración</p>
+        </div>
+    </div>
+</body>
+</html>

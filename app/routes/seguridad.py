@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, session, redirect, url_for, flash, request, jsonify
 from app.models.estacionamiento import Estacionamiento
 from app.utils.auth_utils import login_required, security_required, get_current_user
+from app.utils.send_mail import enviar_espacio_asignado
 from app.models.registro_acceso import RegistroAcceso
 from app.models.pase_vehicular import PaseVehicular
 from app.models.vehiculo import Vehiculo
@@ -475,6 +476,15 @@ def registrar_entrada_con_espacio_especifico():
         )
         
         db.session.commit()
+
+        enviar_espacio_asignado(
+            destinatario_email=pase.usuario.email,
+            destinatario_nombre=pase.usuario.nombre,
+            numero_espacio=espacio_numero,
+            placa_vehiculo=pase.vehiculo.placa,
+            tipo_pase=pase.tipo_pase,
+            fecha_asignacion= datetime.now().strftime('%d/%m/%Y %H:%M')
+        )
         
         return jsonify({
             'success': True, 

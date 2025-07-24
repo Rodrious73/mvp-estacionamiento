@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espacio de Estacionamiento Asignado</title>
+</head>
+<body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; margin: 0; padding: 20px;">
+    
+    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.1);">
+        
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 30px; text-align: center;">
+            <h1 style="margin: 0; font-size: 28px; font-weight: 300;">¡Espacio Asignado!</h1>
+            {% if es_temporal %}
+                <div style="background-color: rgba(255,255,255,0.2); padding: 5px 15px; border-radius: 20px; display: inline-block; margin-top: 10px; font-size: 14px;">TEMPORAL</div>
+            {% elif es_ciclo %}
+                <div style="background-color: rgba(255,255,255,0.2); padding: 5px 15px; border-radius: 20px; display: inline-block; margin-top: 10px; font-size: 14px;">CICLO COMPLETO</div>
+            {% endif %}
+        </div>
+        
+        <!-- Content -->
+        <div style="padding: 40px 30px;">
+            
+            <!-- Parking Icon -->
+            <div style="text-align: center; margin-bottom: 30px;">
+                <div style="font-size: 64px; color: #28a745;">🅿️</div>
+            </div>
+            
+            <p><strong>¡Hola {{ nombre }}!</strong></p>
+            
+            <p>Te informamos que se te ha asignado un espacio de estacionamiento. A continuación encontrarás todos los detalles:</p>
+            
+            <!-- Space Info Card -->
+            <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 25px; border-radius: 10px; text-align: center; margin: 25px 0;">
+                <h2 style="margin: 0;">Tu Espacio Asignado</h2>
+                <div style="font-size: 48px; font-weight: bold; margin: 10px 0;">{{ numero_espacio }}</div>
+                <p style="margin: 0;">Estacionamiento Universitario</p>
+            </div>
+            
+            <!-- Info Grid -->
+            <div style="margin: 25px 0;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745;">
+                        <div style="font-weight: bold; color: #28a745; margin-bottom: 5px;">Vehículo</div>
+                        <div style="color: #555;">{{ placa_vehiculo }}</div>
+                    </div>
+                    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745;">
+                        <div style="font-weight: bold; color: #28a745; margin-bottom: 5px;">Tipo de Pase</div>
+                        <div style="color: #555;">{{ tipo_pase_titulo }}</div>
+                    </div>
+                    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745;">
+                        <div style="font-weight: bold; color: #28a745; margin-bottom: 5px;">Fecha de Asignación</div>
+                        <div style="color: #555;">{{ fecha_asignacion }}</div>
+                    </div>
+                    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745;">
+                        <div style="font-weight: bold; color: #28a745; margin-bottom: 5px;">Estado</div>
+                        <div style="color: #555;">✅ Activo</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Instrucciones específicas por tipo -->
+            <div style="background-color: #e3f2fd; border: 1px solid #bbdefb; padding: 20px; border-radius: 8px; margin: 25px 0;">
+                <h3 style="color: #1976d2; margin-top: 0;">📋 Instrucciones para tu Pase {{ tipo_pase_titulo }}</h3>
+                
+                {% if es_temporal %}
+                <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
+                    <strong>⏰ Pase Temporal:</strong> Este espacio tiene una duración limitada. Verifica las fechas de vencimiento.
+                </div>
+                {% elif es_ciclo %}
+                <div style="background-color: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
+                    <strong>📅 Pase de Ciclo:</strong> Este espacio es válido durante todo el ciclo académico actual.
+                </div>
+                {% endif %}
+                
+                <div style="display: flex; align-items: flex-start; margin-bottom: 15px;">
+                    <div style="background-color: #1976d2; color: white; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-weight: bold; font-size: 14px; flex-shrink: 0;">1</div>
+                    <div>
+                        <strong>Presenta tu código QR</strong><br>
+                        Muestra tu pase QR al personal de seguridad para acceder al estacionamiento.
+                    </div>
+                </div>
+                
+                <div style="display: flex; align-items: flex-start; margin-bottom: 15px;">
+                    <div style="background-color: #1976d2; color: white; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-weight: bold; font-size: 14px; flex-shrink: 0;">2</div>
+                    <div>
+                        <strong>Ubica tu espacio</strong><br>
+                        Dirígete directamente al espacio asignado #{{ numero_espacio }}.
+                    </div>
+                </div>
+                
+                <div style="display: flex; align-items: flex-start; margin-bottom: 15px;">
+                    <div style="background-color: #1976d2; color: white; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-weight: bold; font-size: 14px; flex-shrink: 0;">3</div>
+                    <div>
+                        <strong>Estaciona correctamente</strong><br>
+                        Asegúrate de estar completamente dentro de las líneas del espacio.
+                    </div>
+                </div>
+                
+                <div style="display: flex; align-items: flex-start; margin-bottom: 0;">
+                    <div style="background-color: #1976d2; color: white; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-weight: bold; font-size: 14px; flex-shrink: 0;">4</div>
+                    <div>
+                        <strong>Mantén el pase visible</strong><br>
+                        Deja el código QR visible en tu tablero para verificaciones.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Normas importantes -->
+            <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 20px; border-radius: 8px; margin: 25px 0;">
+                <h4 style="color: #856404; margin-top: 0; font-size: 16px;">⚠️ Normas Importantes</h4>
+                <ul style="margin: 0; padding-left: 20px; color: #856404;">
+                    <li style="margin-bottom: 8px;">Este espacio es exclusivo para tu vehículo con placa {{ placa_vehiculo }}</li>
+                    <li style="margin-bottom: 8px;">No compartas tu pase con otras personas</li>
+                    <li style="margin-bottom: 8px;">Respeta los horarios de acceso del campus</li>
+                    <li style="margin-bottom: 8px;">Reporta inmediatamente cualquier problema con tu espacio</li>
+                    <li style="margin-bottom: 0;">Mantén tu vehículo limpio y en buen estado</li>
+                </ul>
+            </div>
+            
+            <p style="font-size: 14px; color: #666; text-align: center; margin-top: 30px;">
+                <strong>Asignado el:</strong> {{ fecha_actual }}<br>
+                <strong>Nota:</strong> Este espacio es exclusivo para tu vehículo. No compartas esta información.
+            </p>
+        </div>
+        
+        <!-- Footer -->
+        <div style="background-color: #f8f9fa; padding: 20px 30px; text-align: center; color: #666; font-size: 14px;">
+            <p style="margin: 10px 0;">&copy; 2025 Sistema QR Universitario. Todos los derechos reservados.</p>
+            <p style="margin: 10px 0;">Este es un mensaje automático, por favor no responder a este correo.</p>
+            <p style="margin: 10px 0;"><strong>Soporte:</strong> En caso de problemas, contacta al área de estacionamiento</p>
+        </div>
+    </div>
+</body>
+</html>

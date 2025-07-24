@@ -3,6 +3,7 @@ from app import db
 from app.models.usuario import Usuario
 from app.models.usuario_seguridad import UsuarioSeguridad
 from sqlalchemy.exc import IntegrityError
+from app.utils.send_mail import enviar_bienvenida
 
 auth = Blueprint('auth', __name__)
 
@@ -150,6 +151,14 @@ def register():
             # Guardar en la base de datos
             db.session.add(nuevo_usuario)
             db.session.commit()
+
+            # Enviar correo de bienvenida
+            login_url = url_for('auth.login', _external=True)
+            enviar_bienvenida(
+                destinatario_email=email,
+                destinatario_nombre=nombre,
+                link_login=login_url
+            )
             
             flash('¡Registro exitoso! Ya puedes iniciar sesión', 'success')
             return redirect(url_for('auth.login'))

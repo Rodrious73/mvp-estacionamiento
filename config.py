@@ -17,18 +17,6 @@ class Config:
 
     #Tiempo de expiracion de la sesion
     PERMANENT_SESSION_LIFETIME = timedelta(minutes=30)  #Expira tras 30 minutos de inactividad
-
-    #Configuración para Google Maps
-    GOOGLEMAPS_KEY = os.getenv('GOOGLEMAPS_KEY')
-
-    # Configuración de Flask-Mail (Mailtrap)
-    MAIL_SERVER = os.getenv('MAIL_SERVER')
-    MAIL_PORT = int(os.getenv('MAIL_PORT'))
-    MAIL_USE_TLS = os.getenv('MAIL_USE_TLS', 'True').lower() in ['true', '1', 'yes']
-    MAIL_USE_SSL = os.getenv('MAIL_USE_SSL', 'False').lower() in ['true', '1', 'yes']
-    MAIL_USERNAME = os.getenv('MAIL_USERNAME')
-    MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
-    MAIL_DEFAULT_SENDER = os.getenv('MAIL_DEFAULT_SENDER')
     
     # Configuración para manejo de archivos
     UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')

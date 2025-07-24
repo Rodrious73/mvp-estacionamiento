@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitud Aprobada - Pase QR Generado</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; margin: 0; padding: 20px;">
+    
+    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.1);">
+        
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 30px; text-align: center;">
+            <h1 style="margin: 0; font-size: 28px; font-weight: 300;">¡Solicitud Aprobada!</h1>
+        </div>
+        
+        <!-- Content -->
+        <div style="padding: 40px 30px;">
+            
+            <!-- Success Icon -->
+            <div style="text-align: center; margin-bottom: 30px;">
+                <div style="font-size: 64px; color: #28a745;">✅</div>
+            </div>
+            
+            <p style="font-size: 18px; margin-bottom: 25px;"><strong>¡Hola {{ nombre }}!</strong></p>
+            
+            <!-- Approval Card -->
+            <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 25px; border-radius: 10px; text-align: center; margin: 25px 0;">
+                <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">Tu solicitud ha sido aprobada</div>
+                <p style="margin: 0; font-size: 16px;">Tu pase vehicular QR ya está listo para usar</p>
+            </div>
+            
+            <!-- QR Section -->
+            <div style="background-color: white; padding: 30px; border-radius: 10px; text-align: center; margin: 25px 0; border: 2px dashed #28a745;">
+                <h3 style="margin-top: 0; color: #28a745; font-size: 20px;">
+                    🔳 Tu Pase QR
+                </h3>
+                
+                {% if tiene_qr_image %}
+                <!-- Mostrar imagen QR real -->
+                <div style="text-align: center; margin: 20px 0;">
+                    <img src="{{ qr_image_base64 }}" alt="Código QR del Pase" style="max-width: 200px; height: auto; border: 2px solid #28a745; border-radius: 10px; background-color: white; padding: 10px;">
+                </div>
+                {% else %}
+                <!-- Fallback si no hay imagen QR -->
+                <div style="width: 200px; height: 200px; margin: 0 auto 20px; background-color: #f8f9fa; border: 2px solid #dee2e6; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 48px; color: #6c757d;">
+                    📱
+                </div>
+                {% endif %}
+                
+                <p style="color: #666; margin: 0; font-size: 14px;">
+                    <strong>Código QR:</strong><br>
+                    <span style="background-color: #f8f9fa; padding: 5px 10px; border-radius: 5px; font-family: monospace; font-size: 12px; word-break: break-all;">{{ codigo_qr }}</span>
+                </p>
+            </div>
+            
+            <!-- Pase Details -->
+            <div style="background-color: #f8f9fa; padding: 25px; border-radius: 8px; margin: 25px 0;">
+                <h3 style="margin-top: 0; color: #333; font-size: 18px;">📋 Detalles del Pase</h3>
+                
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr style="border-bottom: 1px solid #dee2e6;">
+                        <td style="padding: 10px 0; font-weight: bold; color: #495057; width: 40%;">ID de Solicitud:</td>
+                        <td style="padding: 10px 0; color: #28a745; font-weight: 600;">#{{ id_solicitud }}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #dee2e6;">
+                        <td style="padding: 10px 0; font-weight: bold; color: #495057;">Tipo de Pase:</td>
+                        <td style="padding: 10px 0; color: #28a745; font-weight: 600; text-transform: capitalize;">{{ tipo_pase }}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #dee2e6;">
+                        <td style="padding: 10px 0; font-weight: bold; color: #495057;">Vehículo:</td>
+                        <td style="padding: 10px 0; color: #28a745; font-weight: 600;">{{ placa_vehiculo }} ({{ marca_vehiculo }} {{ modelo_vehiculo }})</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #dee2e6;">
+                        <td style="padding: 10px 0; font-weight: bold; color: #495057;">Válido desde:</td>
+                        <td style="padding: 10px 0; color: #28a745; font-weight: 600;">{{ fecha_inicio }}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #dee2e6;">
+                        <td style="padding: 10px 0; font-weight: bold; color: #495057;">Válido hasta:</td>
+                        <td style="padding: 10px 0; color: #28a745; font-weight: 600;">{{ fecha_fin }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px 0; font-weight: bold; color: #495057;">Estado:</td>
+                        <td style="padding: 10px 0; color: #28a745; font-weight: 600;">✅ Activo</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <!-- Buttons -->
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{{ link_ver_pase }}" style="display: inline-block; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; margin: 10px 5px;">
+                    👁️ Ver Pase Completo
+                </a>
+                <a href="{{ link_descargar_qr }}" style="display: inline-block; background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; margin: 10px 5px;">
+                    📥 Descargar QR
+                </a>
+            </div>
+            
+            <!-- Instructions -->
+            <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 20px; border-radius: 8px; margin: 25px 0;">
+                <h4 style="color: #856404; margin-top: 0; font-size: 16px;">⚠️ Instrucciones Importantes</h4>
+                <ul style="margin: 0; padding-left: 20px; color: #856404;">
+                    <li style="margin-bottom: 8px;">Presenta este código QR al personal de seguridad en el acceso</li>
+                    <li style="margin-bottom: 8px;">Mantén el código visible en tu vehículo durante tu estancia</li>
+                    <li style="margin-bottom: 8px;">El pase es personal e intransferible</li>
+                    <li style="margin-bottom: 8px;">Respeta las normas de estacionamiento de la universidad</li>
+                    <li style="margin-bottom: 0;">En caso de problemas, contacta al personal de seguridad</li>
+                </ul>
+            </div>
+
+            <!-- Normas adicionales para usuarios regulares -->
+            <div style="background-color: #d1ecf1; border: 1px solid #bee5eb; padding: 20px; border-radius: 8px; margin: 25px 0;">
+                <h4 style="color: #0c5460; margin-top: 0; font-size: 16px;">📝 Normas del Pase {{ tipo_pase|title }}</h4>
+                <ul style="margin: 0; padding-left: 20px; color: #0c5460;">
+                    {% if tipo_pase == 'ciclo' %}
+                    <li style="margin-bottom: 8px;">Este pase es válido durante todo el ciclo académico</li>
+                    <li style="margin-bottom: 8px;">Debes renovarlo al inicio de cada nuevo ciclo</li>
+                    <li style="margin-bottom: 8px;">Solo el vehículo registrado ({{ placa_vehiculo }}) puede usar este pase</li>
+                    {% else %}
+                    <li style="margin-bottom: 8px;">Este es un pase temporal con fechas específicas de vigencia</li>
+                    <li style="margin-bottom: 8px;">Válido únicamente entre {{ fecha_inicio }} y {{ fecha_fin }}</li>
+                    <li style="margin-bottom: 8px;">No es renovable automáticamente</li>
+                    {% endif %}
+                    <li style="margin-bottom: 8px;">Mantén siempre el QR visible en tu parabrisas</li>
+                    <li style="margin-bottom: 0;">Reporta inmediatamente cualquier pérdida o daño del pase</li>
+                </ul>
+            </div>
+            
+            {% if tiene_comentarios %}
+            <!-- Solo mostrar si hay comentarios del administrador -->
+            <div style="background-color: #e3f2fd; padding: 20px; border-radius: 8px; margin: 25px 0;">
+                <h4 style="color: #1976d2; margin-top: 0; font-size: 16px;">
+                    💬 Comentarios del Administrador
+                </h4>
+                <p style="margin: 0; color: #555;">{{ comentarios_admin }}</p>
+            </div>
+            {% endif %}
+            
+        </div>
+        
+        <!-- Footer -->
+        <div style="background-color: #f8f9fa; padding: 20px 30px; text-align: center; color: #666; font-size: 14px;">
+            <p style="margin: 10px 0;">© 2025 Sistema QR Universitario. Todos los derechos reservados.</p>
+            <p style="margin: 10px 0;">Este es un mensaje automático, por favor no responder a este correo.</p>
+            <p style="margin: 10px 0;"><strong>Soporte:</strong> En caso de dudas, contacta al área de administración</p>
+        </div>
+        
+    </div>
+</body>
+</html>

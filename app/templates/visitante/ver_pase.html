@@ -204,12 +204,8 @@
                                 </p>
                                 
                                 <div class="d-grid gap-2">
-                                    <button type="button" class="btn btn-primary" onclick="imprimirPase()">
-                                        <i class="fas fa-print me-2"></i>
-                                        Imprimir Pase
-                                    </button>
-                                    <a href="{{ url_for(request.endpoint.split('.')[0] + '.imprimir_pase', id=pase.id) }}" 
-                                        class="btn btn-outline-light" target="_blank">
+                                    <a type="button" href="{{ url_for(request.endpoint.split('.')[0] + '.imprimir_pase', id=pase.id) }}" 
+                                        class="btn btn-primary" target="_blank">
                                         <i class="fas fa-print me-2"></i>Imprimir Pase
                                     </a>
                                 </div>
